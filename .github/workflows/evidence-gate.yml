@@ -27,6 +27,17 @@ jobs:
       - name: Generate the Prisma client
         run: npm run db:generate
 
+      # Mutation testing re-runs the suite once per mutant. The incremental file lets
+      # a run re-test only the mutants a change actually affects, so the first run on
+      # a branch is the expensive one and the rest are quick.
+      - name: Restore the incremental mutation cache
+        uses: actions/cache@v4
+        with:
+          path: reports/stryker-incremental.json
+          key: stryker-incremental-${{ github.sha }}
+          restore-keys: |
+            stryker-incremental-
+
       # This repository gates itself with its own tool.
       - uses: ./
         with:

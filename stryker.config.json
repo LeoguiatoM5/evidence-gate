@@ -44,5 +44,7 @@
     "**/generated",
     "*.log",
     "*.db"
-  ]
+  ],
+  "incremental": true,
+  "incrementalFile": "reports/stryker-incremental.json"
 }

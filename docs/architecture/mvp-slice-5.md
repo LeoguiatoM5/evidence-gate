@@ -99,6 +99,15 @@ ferramenta que faça sandbox do projeto precisa saber o que não é código.
 
 - Mutation cobre só os motores de domínio. As suítes de integração levariam horas,
   porque mutation executa a suíte uma vez por mutante.
-- `runOn` padrão é `["HIGH", "CRITICAL"]`: mudanças de baixo risco não pagam o custo.
+- Este repositório usa `runOn: ["MEDIUM", "HIGH", "CRITICAL"]` — só mudança de risco
+  baixo (documentação, por exemplo) não paga o custo. O padrão do adapter, quando o
+  projeto não declara nada, é `["HIGH", "CRITICAL"]`.
+- Modo incremental (`incremental: true` no `stryker.config.json`) faz uma execução
+  re-testar apenas os mutantes que a mudança afeta. Medido aqui: **5m12s** na execução
+  completa contra **3m23s** na incremental sem mudanças. A economia é limitada pelo
+  custo fixo — sandbox, dry run e inicialização do vitest — que é o piso de qualquer
+  execução. O workflow guarda `reports/stryker-incremental.json` com `actions/cache`.
+- Em um runner do GitHub (2 vCPUs) a execução é mais lenta que na máquina local, que
+  usa 7 processos paralelos. Isso ainda não foi medido em CI.
 - O adapter funciona com qualquer ferramenta que emita o mutation-testing report
   schema; não é acoplado ao Stryker.

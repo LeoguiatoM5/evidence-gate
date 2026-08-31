@@ -43,7 +43,7 @@ const STRATEGY_BY_RISK: Record<RiskLevel, StrategyDefinition> = {
     strategy: "FULL_REGRESSION_AND_API",
     kinds: ["SMOKE", "REGRESSION", "API"],
     description:
-      "CRITICAL risk runs the full regression and API suites; mutation testing is not part of this increment."
+      "CRITICAL risk runs the full regression and API suites, and mutation testing when the project declares a mutation command."
   }
 };
 

@@ -114,6 +114,7 @@
       "reportPath": "reports/mutation/mutation.json",
       "timeoutMs": 2700000,
       "runOn": [
+        "MEDIUM",
         "HIGH",
         "CRITICAL"
       ],
