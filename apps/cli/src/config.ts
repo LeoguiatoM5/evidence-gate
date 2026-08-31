@@ -5,7 +5,15 @@ import { TEST_SUITE_KINDS } from "@evidence-gate/core";
 import type { CriticalityRule } from "@evidence-gate/git-analyzer";
 import type { QualityEvidence } from "@evidence-gate/quality-engine";
 import type { RiskMetrics } from "@evidence-gate/risk-engine";
-import type { AllowedSuite, ExecutionPolicy, ReportFormat } from "@evidence-gate/test-runner";
+import type { RiskLevel } from "@evidence-gate/core";
+import { RISK_LEVELS } from "@evidence-gate/core";
+import type {
+  AllowedSuite,
+  ExecutionPolicy,
+  MutationPolicy,
+  ReportFormat
+} from "@evidence-gate/test-runner";
+import { assertMutationPolicy } from "@evidence-gate/test-runner";
 import { ExecutionPolicyError, REPORT_FORMATS, assertExecutionPolicy } from "@evidence-gate/test-runner";
 import type { ResolvedPolicies } from "./policy-overrides.js";
 import { resolvePolicies } from "./policy-overrides.js";
@@ -29,11 +37,25 @@ export interface CheckConfig {
     | "survivedCriticalMutants"
   >;
   policy: ExecutionPolicy;
+  mutation: MutationSettings | null;
   policies: ResolvedPolicies;
   reportPath: string;
 }
 
 export const DEFAULT_CONFIG_FILE = "evidence-gate.config.json";
+
+/** Mutation testing is slow, so a project chooses the risk levels that justify it. */
+export interface MutationSettings {
+  policy: MutationPolicy;
+  runOn: RiskLevel[];
+  /** Files under a rule at or above this criticality make a survivor a blocker. */
+  criticalityThreshold: number;
+  criticalPathPrefixes: string[];
+}
+
+const DEFAULT_MUTATION_RUN_ON: RiskLevel[] = ["HIGH", "CRITICAL"];
+const DEFAULT_MUTATION_TIMEOUT_MS = 1_800_000;
+const DEFAULT_CRITICALITY_THRESHOLD = 80;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -141,6 +163,63 @@ const readSuites = (source: Record<string, unknown>, workingDirectory: string): 
   });
 };
 
+const readMutationSettings = (
+  execution: Record<string, unknown>,
+  workingDirectory: string,
+  artifactsRoot: string,
+  maxOutputBytes: number,
+  rules: readonly CriticalityRule[]
+): MutationSettings | null => {
+  const raw = execution.mutation;
+  if (raw === undefined) return null;
+  if (!isRecord(raw)) return fail('"execution.mutation" must be an object.');
+
+  const runOnRaw = raw.runOn;
+  let runOn = DEFAULT_MUTATION_RUN_ON;
+  if (runOnRaw !== undefined) {
+    if (!Array.isArray(runOnRaw)) return fail('"execution.mutation.runOn" must be an array.');
+    runOn = runOnRaw.map((level) => {
+      if (typeof level !== "string" || !(RISK_LEVELS as readonly string[]).includes(level)) {
+        return fail(
+          `"execution.mutation.runOn" accepts only ${RISK_LEVELS.join(", ")}; received "${String(level)}".`
+        );
+      }
+      return level as RiskLevel;
+    });
+  }
+
+  const criticalityThreshold =
+    typeof raw.criticalityThreshold === "number"
+      ? raw.criticalityThreshold
+      : DEFAULT_CRITICALITY_THRESHOLD;
+
+  const args = raw.args ?? [];
+  if (!Array.isArray(args)) return fail('"execution.mutation.args" must be an array.');
+
+  return {
+    policy: assertMutationPolicy({
+      workingDirectory,
+      artifactsRoot,
+      command: resolveCommand(readString(raw, "command"), workingDirectory),
+      args: args.map((argument, index) => {
+        if (typeof argument !== "string") {
+          return fail(`"execution.mutation.args[${String(index)}]" must be a string.`);
+        }
+        return argument;
+      }),
+      timeoutMs:
+        typeof raw.timeoutMs === "number" ? raw.timeoutMs : DEFAULT_MUTATION_TIMEOUT_MS,
+      maxOutputBytes,
+      reportPath: readString(raw, "reportPath")
+    }),
+    runOn,
+    criticalityThreshold,
+    criticalPathPrefixes: rules
+      .filter((rule) => rule.businessCriticality >= criticalityThreshold)
+      .map((rule) => rule.pathPrefix)
+  };
+};
+
 export interface LoadConfigOptions {
   /** Directory the CLI was pointed at; relative paths resolve against it. */
   cwd: string;
@@ -179,14 +258,23 @@ export const loadCheckConfig = (options: LoadConfigOptions): CheckConfig => {
   const maxOutputBytes =
     typeof execution.maxOutputBytes === "number" ? execution.maxOutputBytes : 1_048_576;
 
+  const criticalityRules = readCriticalityRules(raw);
+
   return {
     configPath,
     projectName: readString(raw, "project", "unnamed project"),
     baseRef: readString(raw, "baseRef", "origin/main"),
-    criticalityRules: readCriticalityRules(raw),
+    criticalityRules,
     riskMetrics: readNumberRecord<Record<string, number>>(raw, "riskMetrics") as RiskMetrics,
     suppliedEvidence: readNumberRecord<Record<string, number>>(raw, "suppliedEvidence"),
     policies: resolvePolicies(raw),
+    mutation: readMutationSettings(
+      execution,
+      workingDirectory,
+      artifactsRoot,
+      maxOutputBytes,
+      criticalityRules
+    ),
     policy: assertExecutionPolicy({
       workingDirectory,
       artifactsRoot,

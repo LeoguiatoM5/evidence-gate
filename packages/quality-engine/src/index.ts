@@ -35,6 +35,12 @@ export interface QualityPolicy {
   mutationMinimum: number;
   maximumFlakyRate: number;
   minimumConfidence: number;
+  /**
+   * How many survived mutants a critical area may carry before the gate warns.
+   * Zero is the strictest setting; a project that already carries survivors records
+   * its current count here as a ratchet, so only a new survivor raises the warning.
+   */
+  maximumSurvivedCriticalMutants: number;
 }
 
 export const DEFAULT_QUALITY_POLICY: QualityPolicy = {
@@ -52,7 +58,8 @@ export const DEFAULT_QUALITY_POLICY: QualityPolicy = {
   reviewMinimum: 65,
   mutationMinimum: 75,
   maximumFlakyRate: 10,
-  minimumConfidence: 80
+  minimumConfidence: 80,
+  maximumSurvivedCriticalMutants: 0
 };
 
 const clamp = (value: number): number => Math.min(100, Math.max(0, value));
@@ -69,6 +76,12 @@ const validatePolicy = (policy: QualityPolicy): void => {
   }
   if (policy.reviewMinimum >= policy.approvedMinimum) {
     throw new Error("Quality review threshold must be lower than the approval threshold.");
+  }
+  if (
+    !Number.isInteger(policy.maximumSurvivedCriticalMutants) ||
+    policy.maximumSurvivedCriticalMutants < 0
+  ) {
+    throw new Error("The survived critical mutant budget must be a non-negative integer.");
   }
 };
 
@@ -205,13 +218,16 @@ export const evaluateQualityGate = (
       expected: 100
     });
   }
-  if ((evidence.survivedCriticalMutants ?? 0) > 0) {
+  if ((evidence.survivedCriticalMutants ?? 0) > policy.maximumSurvivedCriticalMutants) {
     reasons.push({
       code: "CRITICAL_SURVIVED_MUTANT",
-      message: "Survived mutants exist in a critical area.",
+      message:
+        policy.maximumSurvivedCriticalMutants === 0
+          ? "Survived mutants exist in a critical area."
+          : "Survived mutants in a critical area exceed the recorded budget.",
       severity: "WARNING",
       actual: evidence.survivedCriticalMutants,
-      expected: 0
+      expected: `<= ${policy.maximumSurvivedCriticalMutants}`
     });
   }
   if (quality.missingEvidence.length > 0) {

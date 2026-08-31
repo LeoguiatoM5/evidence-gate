@@ -1,4 +1,5 @@
 import type {
+  MutationExecutionReport,
   QualityGateResult,
   QualityScoreResult,
   RepositoryAnalysis,
@@ -11,7 +12,8 @@ import { analyzeGitDiff } from "@evidence-gate/git-analyzer";
 import type { QualityEvidence } from "@evidence-gate/quality-engine";
 import { calculateQualityScore, evaluateQualityGate } from "@evidence-gate/quality-engine";
 import { assessRisk } from "@evidence-gate/risk-engine";
-import { SubprocessTestRunner } from "@evidence-gate/test-runner";
+import { StrykerMutationRunner, SubprocessTestRunner } from "@evidence-gate/test-runner";
+import type { MutationRunnerPort, RiskLevel } from "@evidence-gate/core";
 import type { CheckConfig } from "./config.js";
 import { describePolicyVersion } from "./policy-overrides.js";
 import { buildEvidence, selectSuites } from "./selection.js";
@@ -26,6 +28,8 @@ export interface CheckResult {
   selection: TestSelection;
   executions: TestExecutionReport[];
   evidence: QualityEvidence;
+  /** Null when the project declared no mutation run, or the risk did not require one. */
+  mutation: MutationExecutionReport | null;
   quality: QualityScoreResult;
   gate: QualityGateResult;
   /** True when a suite crashed or timed out; the decision then cannot be trusted. */
@@ -44,6 +48,9 @@ export interface RunCheckOptions {
   diff: string;
   diffSource: string;
   runner?: TestRunnerPort;
+  mutationRunner?: MutationRunnerPort;
+  /** Forces the mutation run on or off, whatever the configured risk levels are. */
+  mutation?: boolean;
   onStage?: (stage: string, detail: string) => void;
 }
 
@@ -51,6 +58,40 @@ export interface RunCheckOptions {
  * The same pipeline the worker runs, executed in one process and without a database:
  * analyse, assess risk, select suites, execute them, score, decide.
  */
+const runMutation = async (
+  options: RunCheckOptions,
+  riskLevel: RiskLevel,
+  notify: (stage: string, detail: string) => void
+): Promise<MutationExecutionReport | null> => {
+  const settings = options.config.mutation;
+  if (!settings) return null;
+
+  const required = settings.runOn.includes(riskLevel);
+  const shouldRun = options.mutation ?? required;
+  if (!shouldRun) {
+    notify(
+      "MUTATION",
+      `skipped — ${riskLevel} risk is not in ${settings.runOn.join(", ")}`
+    );
+    return null;
+  }
+
+  notify("MUTATION", "running mutation testing");
+  const runner =
+    options.mutationRunner ?? new StrykerMutationRunner(settings.policy, { validate: false });
+  const report = await runner.run({
+    analysisId: "cli",
+    criticalPathPrefixes: settings.criticalPathPrefixes
+  });
+  notify(
+    "MUTATION",
+    report.mutation
+      ? `score ${String(report.mutation.mutationScore)} · ${String(report.mutation.survivedCriticalMutants)} critical survivor(s)`
+      : `${report.status.toLowerCase()} — no mutation evidence`
+  );
+  return report;
+};
+
 export const runCheck = async (options: RunCheckOptions): Promise<CheckResult> => {
   const { config } = options;
   const notify = options.onStage ?? (() => undefined);
@@ -87,7 +128,20 @@ export const runCheck = async (options: RunCheckOptions): Promise<CheckResult> =
   }
 
   const executionBroken = executions.some((execution) => execution.status !== "COMPLETED");
-  const evidence = buildEvidence(executions, config.suppliedEvidence);
+
+  const mutation = await runMutation(options, risk.level, notify);
+  const supplied = { ...config.suppliedEvidence };
+  if (mutation) {
+    // Executed evidence always wins, and a failed measurement is not papered over
+    // with the value the project declared: it becomes missing evidence instead.
+    delete supplied.mutationScore;
+    delete supplied.survivedCriticalMutants;
+    if (mutation.mutation) {
+      supplied.mutationScore = mutation.mutation.mutationScore;
+      supplied.survivedCriticalMutants = mutation.mutation.survivedCriticalMutants;
+    }
+  }
+  const evidence = buildEvidence(executions, supplied);
   const quality = calculateQualityScore(risk, evidence, config.policies.quality);
   const gate = evaluateQualityGate(risk, quality, evidence, config.policies.quality);
   notify("CALCULATING", `score ${String(quality.score)} → ${gate.decision}`);
@@ -102,6 +156,7 @@ export const runCheck = async (options: RunCheckOptions): Promise<CheckResult> =
     selection,
     executions,
     evidence,
+    mutation,
     quality,
     gate,
     executionBroken

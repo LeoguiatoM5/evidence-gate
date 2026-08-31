@@ -90,6 +90,24 @@ export const renderTerminalReport = (result: CheckResult): string => {
       `   ${dim(`${String(totals.passed)} passed · ${String(totals.failed)} failed · ${String(totals.flaky)} flaky · ${String(totals.skipped)} skipped`)}`
     );
   }
+  if (result.mutation) {
+    const mutation = result.mutation.mutation;
+    lines.push("");
+    lines.push(`  ${bold("Mutation")}`);
+    if (mutation) {
+      lines.push(
+        `   ${green("ok")} score ${String(mutation.mutationScore)}  ${dim(`${String(mutation.totals.killed)} killed · ${String(mutation.totals.survived)} survived · ${String(mutation.totals.noCoverage)} uncovered · ${String(mutation.totals.timeout)} timeout`)}`
+      );
+      if (mutation.survivedCriticalMutants > 0) {
+        lines.push(
+          `   ${red("×")} ${String(mutation.survivedCriticalMutants)} survivor(s) in a critical area`
+        );
+      }
+    } else {
+      lines.push(`   ${red(result.mutation.status.toLowerCase())} ${dim(result.mutation.errorMessage ?? "no mutation evidence")}`);
+    }
+  }
+
   lines.push("");
 
   const failedTests = result.executions.flatMap((execution) =>

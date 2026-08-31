@@ -37,6 +37,14 @@ describe("project policy overrides", () => {
     expect(describePolicyVersion(resolved)).toBe("risk-v1+quality-v1-acme (project override)");
   });
 
+  it("reads the survived critical mutant budget", () => {
+    const resolved = resolvePolicies({
+      qualityPolicy: { maximumSurvivedCriticalMutants: 65 }
+    });
+    expect(resolved.quality.maximumSurvivedCriticalMutants).toBe(65);
+    expect(resolvePolicies({}).quality.maximumSurvivedCriticalMutants).toBe(0);
+  });
+
   it("rejects an unknown key rather than silently ignoring it", () => {
     expect(() => resolvePolicies({ qualityPolicy: { weights: { chaos: 10 } } })).toThrow(
       PolicyOverrideError

@@ -98,4 +98,5 @@ export interface QualityGateResult {
 }
 
 export * from "./execution.js";
+export * from "./mutation.js";
 export * from "./redaction.js";

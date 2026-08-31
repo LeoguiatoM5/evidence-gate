@@ -1,6 +1,6 @@
 # Evidence Gate — Handoff do agente
 
-Atualizado em 31/08/2026 (Incrementos 1–4 concluídos). Este arquivo registra o estado verificável do projeto, decisões já tomadas e a sequência segura para continuar sem recomeçar ou simular funcionalidades.
+Atualizado em 31/08/2026 (Incrementos 1–5 concluídos). Este arquivo registra o estado verificável do projeto, decisões já tomadas e a sequência segura para continuar sem recomeçar ou simular funcionalidades.
 
 ## Objetivo do produto
 
@@ -82,7 +82,16 @@ pull_request → action.yml → evidence-gate check
   → job falha conforme fail-on
 ```
 
-Não há dashboard web, mutation testing executado (Stryker) nem IA. Esses itens pertencem aos incrementos 5 e 6 e não devem ser apresentados como prontos.
+Incremento 5 — mutation testing executado de verdade:
+
+```text
+evidence-gate check --mutation
+  → StrykerJS em subprocesso allow-listed
+  → parser do mutation-testing report schema
+  → mutationScore e survivedCriticalMutants medidos, não informados
+```
+
+Não há dashboard web nem IA. Esses itens pertencem aos incrementos 6 e 7 e não devem ser apresentados como prontos.
 
 ### Monorepo atual
 
@@ -165,7 +174,7 @@ docs/architecture/                documentação de incrementos
 7. Seleção de testes e evidência
 
    - Seleção por nível de risco sobre o allow list: LOW/MEDIUM → smoke; HIGH/CRITICAL → smoke + regressão + API.
-   - Seleção por impacto real depende do mapa do Incremento 4; `TestSelection.reason` registra explicitamente essa limitação.
+   - Seleção por impacto real depende do mapa do Incremento 6; `TestSelection.reason` registra explicitamente essa limitação.
    - Regressão, API e flaky rate vêm exclusivamente da execução; mutation, coverage, mitigação e segurança continuam sendo valores informados no intake (`suppliedEvidence`).
    - O contrato assíncrono não aceita resultados de regressão no payload.
 
@@ -232,6 +241,11 @@ docs/architecture/                documentação de incrementos
 | Escopo do incremento 2 | `docs/architecture/mvp-slice-2.md` |
 | Escopo do incremento 3 | `docs/architecture/mvp-slice-3.md` |
 | Escopo do incremento 4 | `docs/architecture/mvp-slice-4.md` |
+| Escopo do incremento 5 | `docs/architecture/mvp-slice-5.md` |
+| Porta de mutation | `packages/core/src/mutation.ts` |
+| Parser do Stryker | `packages/test-runner/src/report-stryker.ts` |
+| Adapter de mutation | `packages/test-runner/src/mutation.ts` |
+| Config do Stryker | `stryker.config.json` e `stryker.vitest.config.ts` |
 | GitHub Action | `action.yml` |
 | Workflows | `.github/workflows/` |
 | Política por projeto | `apps/cli/src/policy-overrides.ts` |
@@ -245,7 +259,7 @@ docs/architecture/                documentação de incrementos
 ```text
 npm run lint       aprovado
 npm run typecheck  aprovado
-npm test           11 arquivos, 71 testes aprovados
+npm test           15 arquivos, 155 testes aprovados
 ```
 
 Os testes existentes cobrem:
@@ -312,8 +326,8 @@ Entregue e validado. Detalhes em `docs/architecture/mvp-slice-2.md`.
 
 Pendências deixadas conscientemente para os incrementos seguintes:
 
-- Seleção por impacto real (mapa path/módulo → suítes) é do Incremento 4; hoje a seleção é por nível de risco sobre o allow list.
-- Mascaramento de request/response de testes de API só terá efeito prático quando o Incremento 4 normalizar essas evidências; a função de redação já existe e está testada.
+- Seleção por impacto real (mapa path/módulo → suítes) é do Incremento 6; hoje a seleção é por nível de risco sobre o allow list.
+- Mascaramento de request/response de testes de API só terá efeito prático quando o Incremento 6 normalizar essas evidências; a função de redação já existe e está testada.
 - Retenção e limpeza de artefatos ainda não existem.
 
 ### Incremento 3 — CLI, exemplo e relatório (concluído)
@@ -340,19 +354,35 @@ Entregue. Detalhes em `docs/architecture/mvp-slice-4.md`.
 
 **Não validado ainda:** a Action nunca rodou em um PR real. A primeira execução é a verificação que falta.
 
-### Próxima decisão — Dashboard ou Stryker
+### Incremento 5 — Mutation testing executado (concluído)
+
+Entregue e validado contra saída real do Stryker. Detalhes em `docs/architecture/mvp-slice-5.md`.
+
+- `MutationRunnerPort` e `MutationReport` no domínio; cálculo padrão `detected / valid`.
+- Parser do mutation-testing report schema e adapter com a mesma disciplina de execução do runner de testes.
+- `execution.mutation` na configuração, com `runOn` por nível de risco e `criticalityThreshold`; flags `--mutation` / `--no-mutation`.
+- Evidência executada vence a informada; run que falhou vira lacuna, não fallback para o valor de configuração.
+- Exibição no terminal, no comentário do PR e no relatório HTML.
+
+**Resultado real deste repositório:** a primeira medição deu **57.4** (507 mutantes, 172 sobreviventes, 44 sem cobertura), com o arquivo do Quality Gate em 45.2 — e os 86 testes passando. A dívida foi paga escrevendo 69 testes novos, com asserção nos dois lados de cada limite, e a medição subiu para **87.2** (0 sem cobertura, 0 timeout). Nenhum limiar foi ajustado.
+
+| Arquivo | Antes | Depois |
+|---|---|---|
+| `packages/quality-engine/src/index.ts` | 45.2 | 83.9 |
+| `packages/quality-engine/src/selection.ts` | 66.7 | 86.7 |
+| `packages/quality-engine/src/evidence.ts` | 70.4 | 92.6 |
+| `packages/risk-engine/src/index.ts` | 71.7 | 90.8 |
+
+Para reproduzir: `npm run mutation` (cerca de 10 minutos).
+
+### Próxima decisão — Dívida de mutation ou Dashboard
 
 Duas frentes concorrentes, a decidir com o usuário. A numeração 4–7 abaixo permanece
 como estava; esta seção é a escolha do que vem primeiro.
 
-**Opção A — Adapter StrykerJS (fecha a lacuna que o próprio repositório declara).**
+**Opção A — Devolver peso a mutation no `evidence-gate.config.json`.**
 
-1. Executar Stryker de forma incremental e ler o relatório JSON.
-2. Persistir killed, survived, timeout e no coverage.
-3. Alimentar `mutationScore` e `survivedCriticalMutants` a partir de execução real, não de configuração.
-4. Devolver os pesos de mutation ao padrão no `evidence-gate.config.json`.
-
-Critério de saída: o repositório deixa de informar mutation por configuração e passa a medi-lo.
+Hoje o peso de mutation está em 8 (o padrão é 20), fixado quando o projeto ainda não media mutation. Agora mede: 87.2. Subir o peso é honesto, mas tem uma consequência a avaliar antes: com `runOn: ["HIGH","CRITICAL"]`, um PR de risco MEDIUM não roda mutation, então a evidência fica ausente e um peso maior derruba mais a confiança. Decidir entre subir o peso, ampliar o `runOn`, ou deixar como está.
 
 **Opção B — Dashboard React (maior valor visual, depende do modo servidor).**
 
@@ -365,7 +395,7 @@ Critério de saída: o repositório deixa de informar mutation por configuraçã
 Critério de saída: usuário entende o que mudou, por que a decisão ocorreu e qual ação é
 necessária sem consultar logs.
 
-### Incremento 4 — Test Impact Analysis e API Testing
+### Incremento 6 — Test Impact Analysis
 
 1. Criar mapa determinístico path/módulo → funcionalidades → tags/suítes Playwright.
 2. Implementar Test Selection Engine por risco:
@@ -379,29 +409,30 @@ necessária sem consultar logs.
 4. Persistir histórico por identidade estável do teste.
 5. Adicionar GitHub Actions: install, lint, typecheck, unit, API, E2E, build e Quality Gate.
 
-### Incremento 5 — Mutation, Flakiness e Failure Analysis
+### Incremento 7 — Flakiness e Failure Analysis
 
-1. Criar adapter StrykerJS, preferindo relatório JSON e execução incremental em PRs.
-2. Persistir killed, survived, timeout e no coverage; criar issues para survived mutants críticos.
-3. Criar cálculo de flaky score por janela de execuções:
+Mutation (itens 1 e 2 da lista original) foi entregue no Incremento 5. Resta:
+
+1. Criar cálculo de flaky score por janela de execuções:
 
    ```text
    0–2% STABLE | 2–5% ATTENTION | 5–10% FLAKY | >10% HIGHLY_FLAKY
    ```
 
-4. Implementar Failure Analyzer determinístico com evidência: assertion, timeout, network, environment, selector, API, authentication, infrastructure, application bug e unknown.
-5. Conectar sinais ao Quality Engine sem duplicar penalidades indevidamente.
+2. Implementar Failure Analyzer determinístico com evidência: assertion, timeout, network, environment, selector, API, authentication, infrastructure, application bug e unknown.
+3. Conectar sinais ao Quality Engine sem duplicar penalidades indevidamente.
+4. Persistir mutantes sobreviventes no modo servidor e abrir issue para os críticos.
 
-### Incremento 6 — IA e GitHub
+### Incremento 8 — IA e GitHub App
 
 1. Criar `AIProvider` e contratos: `analyzeDiff`, `generateTestScenarios`, `analyzeFailure`, `calculateRisk`, `explainQualityGate`.
 2. Enviar ao modelo apenas fatos estruturados e referências de evidência.
 3. Exigir saída estruturada em `FACT`, `INFERENCE`, `RECOMMENDATION`.
 4. Rejeitar fatos não sustentados; retornar `INSUFFICIENT EVIDENCE` quando necessário.
-5. Criar GitHub App, webhook, recebimento de PR, idempotência por SHA e comentário de PR.
+5. Criar GitHub App e webhook para o modo servidor. A GitHub Action com comentário idempotente já foi entregue no Incremento 4.
 6. Nunca colocar token do GitHub, OpenAI ou outro provedor no banco, log, artefato ou resposta HTTP.
 
-### Incremento 7 — Produto operacional
+### Incremento 9 — Produto operacional
 
 1. Trends de Quality Score, mutation, coverage, flaky rate, duração e detecção de bugs.
 2. Migração ensaiada SQLite → PostgreSQL.
