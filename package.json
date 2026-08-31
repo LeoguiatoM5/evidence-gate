@@ -1,5 +1,5 @@
 {
-  "name": "qualityguard-ai",
+  "name": "evidence-gate",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
     "dev:worker": "tsx apps/worker/src/main.ts",
     "check": "tsx apps/cli/src/cli.ts check",
     "demo": "tsx apps/cli/src/cli.ts check --cwd examples/checkout-service --diff-file changes.patch",
-    "demo:healthy": "tsx apps/cli/src/cli.ts check --cwd examples/checkout-service --diff-file changes.patch --config qualityguard.healthy.json",
+    "demo:healthy": "tsx apps/cli/src/cli.ts check --cwd examples/checkout-service --diff-file changes.patch --config evidence-gate.healthy.json",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

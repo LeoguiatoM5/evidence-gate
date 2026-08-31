@@ -1,10 +1,10 @@
-# QualityGuard AI — Handoff do agente
+# Evidence Gate — Handoff do agente
 
 Atualizado em 31/08/2026 (Incrementos 1–3 concluídos). Este arquivo registra o estado verificável do projeto, decisões já tomadas e a sequência segura para continuar sem recomeçar ou simular funcionalidades.
 
 ## Objetivo do produto
 
-QualityGuard AI é um Intelligent QA Gate: recebe uma alteração de software e evidências reais, calcula risco e qualidade, e retorna uma decisão explicável:
+Evidence Gate é um Intelligent QA Gate: recebe uma alteração de software e evidências reais, calcula risco e qualidade, e retorna uma decisão explicável:
 
 ```text
 RELEASE_APPROVED | REVIEW_REQUIRED | RELEASE_BLOCKED
@@ -12,14 +12,18 @@ RELEASE_APPROVED | REVIEW_REQUIRED | RELEASE_BLOCKED
 
 Princípio obrigatório: testes verdes e coverage alto não comprovam qualidade por si só. Mutation testing, risco, criticidade, estabilidade e evidência disponível precisam influenciar a decisão.
 
-## Restrição operacional obrigatória
+## Restrição da máquina de desenvolvimento (não se aplica a quem clona o repositório)
 
-O disco `C:` está comprometido. Todo arquivo gravável relacionado ao projeto deve permanecer em `D:\QUALITYGUARD_AI`.
+Esta seção descreve **apenas** a estação onde o projeto foi desenvolvido. Quem clona o
+repositório usa `npm` normalmente, como está no README; nada aqui é requisito do produto.
+
+Nessa estação o disco `C:` não é confiável, então todo arquivo gravável do projeto
+permanece em `D:\QUALITYGUARD_AI`.
 
 - Runtime local: `D:\QUALITYGUARD_AI\.tooling\node\node-v22.23.2-win-x64`
 - Cache npm: `D:\QUALITYGUARD_AI\.cache\npm`
 - Perfil isolado e temporários: `D:\QUALITYGUARD_AI\.local` e `D:\QUALITYGUARD_AI\.tmp`
-- SQLite: `D:\QUALITYGUARD_AI\data\qualityguard.db`
+- SQLite: `D:\QUALITYGUARD_AI\data\evidence-gate.db`
 - Artefatos de execução: `D:\QUALITYGUARD_AI\artifacts`
 - Allow list de execução do worker: `D:\QUALITYGUARD_AI\config\execution-policy.json`
 
@@ -62,7 +66,7 @@ Worker (lease no SQLite)
 Incremento 3 — CLI, exemplo executável e relatório HTML:
 
 ```text
-qualityguard check
+evidence-gate check
   → descobre o diff (git ou --diff-file)
   → mesma pipeline do worker, em um processo, sem banco
   → saída no terminal + relatório HTML autocontido
@@ -74,7 +78,7 @@ Não há dashboard web, mutation testing executado (Stryker), IA nem integraçã
 ### Monorepo atual
 
 ```text
-apps/cli/                         CLI qualityguard check, relatório HTML e exit code
+apps/cli/                         CLI evidence-gate check, relatório HTML e exit code
 apps/api/                         API Fastify (modo servidor)
 apps/worker/                      worker, fila e máquina de estados
 packages/core/                    tipos, portas de execução e redação de segredos
@@ -141,7 +145,7 @@ docs/architecture/                documentação de incrementos
 
 6. Execução de testes (`packages/test-runner`)
 
-   - Executa somente suítes declaradas em `config/execution-policy.json` (`QG_EXECUTION_POLICY_FILE`). Nada do payload vira comando, argumento ou diretório.
+   - Executa somente suítes declaradas em `config/execution-policy.json` (`EG_EXECUTION_POLICY_FILE`). Nada do payload vira comando, argumento ou diretório.
    - `spawn` com `shell: false`; comando obrigatoriamente absoluto e existente; policy validada antes de qualquer job.
    - Timeout encerra a árvore de processos (`taskkill /T /F` no Windows); saída limitada por `maxOutputBytes` e marcada como truncada.
    - O processo filho recebe apenas variáveis de uma lista fixa mais `PLAYWRIGHT_JSON_OUTPUT_NAME`; o ambiente do worker não vaza.
@@ -158,9 +162,9 @@ docs/architecture/                documentação de incrementos
 
 8. CLI (`apps/cli`) — Incremento 3
 
-   - `qualityguard check` roda a mesma pipeline do worker em um processo, sem banco.
+   - `evidence-gate check` roda a mesma pipeline do worker em um processo, sem banco.
    - Origem do diff: `git diff <base>...HEAD`, fallback para a árvore de trabalho, ou `--diff-file`.
-   - Configuração no repositório avaliado: `qualityguard.config.json`. O comando só aceita o literal `node`, um caminho absoluto ou um caminho relativo ao `workingDirectory` — nunca texto livre de shell.
+   - Configuração no repositório avaliado: `evidence-gate.config.json`. O comando só aceita o literal `node`, um caminho absoluto ou um caminho relativo ao `workingDirectory` — nunca texto livre de shell.
    - Exit codes: `0` decisão aceitável, `1` gate reprovou, `2` erro operacional. `--fail-on blocked|review` controla o limiar.
    - Relatório HTML autocontido: sem script, sem fonte externa, sem requisição de rede; claro e escuro; todo valor rotulado, sem depender de cor sozinha. Valores vindos do projeto avaliado são escapados (coberto por teste).
    - `npm run demo` e `npm run demo:healthy` executam contra `examples/checkout-service` sem configuração adicional.
@@ -174,7 +178,7 @@ docs/architecture/                documentação de incrementos
 10. Segurança já aplicada
 
    - Body limit da API: aproximadamente 2 MB.
-   - `redactText` / `redactValue` / `redactHeaders` em `@qualityguard/core` mascaram `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `password`, `secret`, tokens de provedor (GitHub, OpenAI, Slack, AWS), JWT e chaves privadas antes de qualquer gravação de mensagem de erro, log de processo ou artefato.
+   - `redactText` / `redactValue` / `redactHeaders` em `@evidence-gate/core` mascaram `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`, `password`, `secret`, tokens de provedor (GitHub, OpenAI, Slack, AWS), JWT e chaves privadas antes de qualquer gravação de mensagem de erro, log de processo ou artefato.
    - Segredo após esquema de autenticação (`authorization: Bearer <token>`) é mascarado junto com o esquema; isso foi um bug real corrigido e coberto por teste de regressão.
    - Artefatos, caches, banco, temporários e `config/execution-policy.json` são ignorados pelo Git.
    - O worker não executa comando proveniente de payload ou IA.
@@ -301,7 +305,7 @@ Pendências deixadas conscientemente para os incrementos seguintes:
 
 Entregue e validado. Detalhes em `docs/architecture/mvp-slice-3.md`.
 
-- `apps/cli` com `qualityguard check`, exit codes e relatório HTML autocontido.
+- `apps/cli` com `evidence-gate check`, exit codes e relatório HTML autocontido.
 - Runner multi-formato: `playwright-json` e `vitest-json`; pacote renomeado para `packages/test-runner`.
 - `examples/checkout-service` com código e testes reais; `npm run demo` e `npm run demo:healthy`.
 - Seleção e evidência movidas de `apps/worker` para `packages/quality-engine`, eliminando duplicação entre worker e CLI.
@@ -315,7 +319,7 @@ como estava; esta seção é a escolha do que vem primeiro.
 
 **Opção A — GitHub Action (maior impacto de adoção).**
 
-1. Action que roda `qualityguard check` no PR e publica a decisão como comentário.
+1. Action que roda `evidence-gate check` no PR e publica a decisão como comentário.
 2. Idempotência por SHA: reexecutar não duplica comentário.
 3. Anexar o relatório HTML como artifact do workflow.
 4. Nunca colocar token do GitHub em log, artefato ou relatório.

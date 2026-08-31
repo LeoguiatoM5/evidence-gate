@@ -8,7 +8,7 @@ import type {
   TestExecutionReport,
   TestSelection,
   WorkerStage
-} from "@qualityguard/core";
+} from "@evidence-gate/core";
 import type { PrismaClient } from "./generated/prisma/client";
 import { toJson } from "./json.js";
 

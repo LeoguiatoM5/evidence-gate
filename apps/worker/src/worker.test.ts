@@ -7,14 +7,14 @@ import type {
   TestExecutionRequest,
   TestRunnerPort,
   TestSuiteKind
-} from "@qualityguard/core";
+} from "@evidence-gate/core";
 import {
   JobQueue,
   WorkerAnalysisRepository,
   createPrismaClient,
-  type QualityGuardPrismaClient
-} from "@qualityguard/persistence-prisma";
-import { SubprocessTestRunner, type ExecutionPolicy } from "@qualityguard/test-runner";
+  type EvidenceGatePrismaClient
+} from "@evidence-gate/persistence-prisma";
+import { SubprocessTestRunner, type ExecutionPolicy } from "@evidence-gate/test-runner";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createTestDatabase, type TestDatabase } from "../../../tests/helpers/database.js";
 import { AnalysisPipeline } from "./pipeline.js";
@@ -167,7 +167,7 @@ const repositoryAnalysis = (suffix: string): RepositoryAnalysis => ({
 });
 
 interface Harness {
-  prisma: QualityGuardPrismaClient;
+  prisma: EvidenceGatePrismaClient;
   repository: WorkerAnalysisRepository;
   queue: JobQueue;
   analysisId: string;
@@ -187,7 +187,7 @@ const seedPendingAnalysis = async (
   const queue = new JobQueue(prisma);
 
   const created = await repository.createPending({
-    project: { name: "QualityGuard Demo", slug: "qualityguard-demo" },
+    project: { name: "Evidence Gate Demo", slug: "evidence-gate-demo" },
     repository: {
       name: "checkout-service",
       provider: "LOCAL",

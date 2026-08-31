@@ -3,8 +3,8 @@ import {
   JobQueue,
   WorkerAnalysisRepository,
   createPrismaClient
-} from "@qualityguard/persistence-prisma";
-import { SubprocessTestRunner } from "@qualityguard/test-runner";
+} from "@evidence-gate/persistence-prisma";
+import { SubprocessTestRunner } from "@evidence-gate/test-runner";
 import { loadWorkerConfig } from "./config.js";
 import { AnalysisPipeline } from "./pipeline.js";
 import { AnalysisWorker, type WorkerLogger } from "./worker.js";
@@ -41,12 +41,12 @@ logger.info(
     suites: runner.listAllowedSuites().map((suite) => suite.key),
     artifactsRoot: config.policy.artifactsRoot
   },
-  "QualityGuard worker started."
+  "Evidence Gate worker started."
 );
 worker.start();
 
 const shutdown = (signal: string): void => {
-  logger.info({ signal }, "Stopping the QualityGuard worker.");
+  logger.info({ signal }, "Stopping the Evidence Gate worker.");
   void worker
     .stop()
     .then(() => prisma.$disconnect())

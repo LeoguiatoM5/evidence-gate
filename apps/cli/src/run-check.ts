@@ -6,16 +6,16 @@ import type {
   TestExecutionReport,
   TestRunnerPort,
   TestSelection
-} from "@qualityguard/core";
-import { analyzeGitDiff } from "@qualityguard/git-analyzer";
-import type { QualityEvidence } from "@qualityguard/quality-engine";
+} from "@evidence-gate/core";
+import { analyzeGitDiff } from "@evidence-gate/git-analyzer";
+import type { QualityEvidence } from "@evidence-gate/quality-engine";
 import {
   DEFAULT_QUALITY_POLICY,
   calculateQualityScore,
   evaluateQualityGate
-} from "@qualityguard/quality-engine";
-import { DEFAULT_RISK_POLICY, assessRisk } from "@qualityguard/risk-engine";
-import { SubprocessTestRunner } from "@qualityguard/test-runner";
+} from "@evidence-gate/quality-engine";
+import { DEFAULT_RISK_POLICY, assessRisk } from "@evidence-gate/risk-engine";
+import { SubprocessTestRunner } from "@evidence-gate/test-runner";
 import type { CheckConfig } from "./config.js";
 import { buildEvidence, selectSuites } from "./selection.js";
 

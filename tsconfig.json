@@ -16,13 +16,13 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@qualityguard/core": ["packages/core/src/index.ts"],
-      "@qualityguard/contracts": ["packages/contracts/src/index.ts"],
-      "@qualityguard/git-analyzer": ["packages/git-analyzer/src/index.ts"],
-      "@qualityguard/risk-engine": ["packages/risk-engine/src/index.ts"],
-      "@qualityguard/quality-engine": ["packages/quality-engine/src/index.ts"],
-      "@qualityguard/persistence-prisma": ["packages/persistence-prisma/src/index.ts"],
-      "@qualityguard/test-runner": ["packages/test-runner/src/index.ts"]
+      "@evidence-gate/core": ["packages/core/src/index.ts"],
+      "@evidence-gate/contracts": ["packages/contracts/src/index.ts"],
+      "@evidence-gate/git-analyzer": ["packages/git-analyzer/src/index.ts"],
+      "@evidence-gate/risk-engine": ["packages/risk-engine/src/index.ts"],
+      "@evidence-gate/quality-engine": ["packages/quality-engine/src/index.ts"],
+      "@evidence-gate/persistence-prisma": ["packages/persistence-prisma/src/index.ts"],
+      "@evidence-gate/test-runner": ["packages/test-runner/src/index.ts"]
     },
     "types": ["node"]
   },

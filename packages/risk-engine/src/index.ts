@@ -3,7 +3,7 @@ import type {
   RiskFactorContribution,
   RiskFactorKey,
   RiskLevel
-} from "@qualityguard/core";
+} from "@evidence-gate/core";
 
 export interface RiskMetrics {
   businessCriticality?: number;

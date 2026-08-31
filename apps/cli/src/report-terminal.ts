@@ -1,4 +1,4 @@
-import type { ReleaseDecision } from "@qualityguard/core";
+import type { ReleaseDecision } from "@evidence-gate/core";
 import type { CheckResult } from "./run-check.js";
 
 const useColor = (): boolean =>

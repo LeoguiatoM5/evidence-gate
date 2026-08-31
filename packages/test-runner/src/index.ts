@@ -9,8 +9,8 @@ import type {
   TestExecutionRequest,
   TestRunnerPort,
   TestSuiteKind
-} from "@qualityguard/core";
-import { redactText } from "@qualityguard/core";
+} from "@evidence-gate/core";
+import { redactText } from "@evidence-gate/core";
 import type { AllowedSuite, ExecutionPolicy } from "./policy.js";
 import { assertExecutionPolicy, resolveAllowedSuite } from "./policy.js";
 import type { ParsedAttachment, ParsedReport } from "./report.js";

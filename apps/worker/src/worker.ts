@@ -1,5 +1,5 @@
-import type { AnalysisStatus } from "@qualityguard/core";
-import type { JobQueue, WorkerAnalysisRepository } from "@qualityguard/persistence-prisma";
+import type { AnalysisStatus } from "@evidence-gate/core";
+import type { JobQueue, WorkerAnalysisRepository } from "@evidence-gate/persistence-prisma";
 import type { AnalysisPipeline } from "./pipeline.js";
 
 export interface WorkerLogger {

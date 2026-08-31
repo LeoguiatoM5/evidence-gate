@@ -6,7 +6,7 @@ Aceita.
 
 ## Contexto
 
-O QualityGuard AI precisa entregar um MVP executável sem introduzir infraestrutura distribuída prematura. O disco `C:` do ambiente atual não pode ser usado para dados, dependências, temporários ou caches do projeto.
+O Evidence Gate precisa entregar um MVP executável sem introduzir infraestrutura distribuída prematura. O disco `C:` do ambiente atual não pode ser usado para dados, dependências, temporários ou caches do projeto.
 
 ## Decisão
 

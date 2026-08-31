@@ -1,4 +1,4 @@
-import { createPrismaClient } from "@qualityguard/persistence-prisma";
+import { createPrismaClient } from "@evidence-gate/persistence-prisma";
 import { afterEach, describe, expect, it } from "vitest";
 import { createTestDatabase, type TestDatabase } from "../../../tests/helpers/database.js";
 import { buildApp } from "./app.js";
@@ -24,7 +24,7 @@ index 1111111..2222222 100644
 +export const limit = 20;
 `;
 
-const project = { name: "QualityGuard Demo", slug: "qualityguard-demo" } as const;
+const project = { name: "Evidence Gate Demo", slug: "evidence-gate-demo" } as const;
 const repository = {
   name: "checkout-service",
   provider: "LOCAL",

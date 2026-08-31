@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import type { TestStatus } from "@qualityguard/core";
-import { redactText } from "@qualityguard/core";
+import type { TestStatus } from "@evidence-gate/core";
+import { redactText } from "@evidence-gate/core";
 
 /**
  * Defensive parser for the Playwright JSON reporter. The report is produced by an

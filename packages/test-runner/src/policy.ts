@@ -1,7 +1,7 @@
 import { accessSync, constants, statSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
-import type { TestSuiteKind } from "@qualityguard/core";
-import { TEST_SUITE_KINDS } from "@qualityguard/core";
+import type { TestSuiteKind } from "@evidence-gate/core";
+import { TEST_SUITE_KINDS } from "@evidence-gate/core";
 
 /**
  * An execution policy is operator configuration, never payload. Nothing in an HTTP

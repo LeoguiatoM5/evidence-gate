@@ -30,7 +30,7 @@
   },
   "execution": {
     "workingDirectory": ".",
-    "artifactsRoot": ".qualityguard/artifacts",
+    "artifactsRoot": ".evidence-gate/artifacts",
     "timeoutMs": 120000,
     "maxOutputBytes": 1048576,
     "suites": [

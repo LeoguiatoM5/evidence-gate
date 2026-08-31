@@ -1,5 +1,5 @@
 {
-  "name": "@qualityguard/persistence-prisma",
+  "name": "@evidence-gate/persistence-prisma",
   "version": "0.1.0",
   "private": true,
   "type": "module",

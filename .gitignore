@@ -17,8 +17,10 @@ data/*.db-wal
 .env
 config/execution-policy.json
 examples/*/node_modules/
-examples/*/.qualityguard/
-qualityguard-report.html
+examples/*/.evidence-gate/
+examples/*/artifacts/
+.evidence-gate/
+evidence-gate-report.html
 packages/persistence-prisma/src/generated/
 
 *.log

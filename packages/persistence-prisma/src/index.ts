@@ -7,7 +7,7 @@ import type {
   QualityScoreResult,
   RepositoryAnalysis,
   RiskAssessment
-} from "@qualityguard/core";
+} from "@evidence-gate/core";
 import { PrismaClient } from "./generated/prisma/client";
 import { toJson } from "./json.js";
 
@@ -16,7 +16,7 @@ export * from "./json.js";
 export * from "./worker-repository.js";
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
-const defaultDatabasePath = resolve(packageRoot, "../../../data/qualityguard.db").replaceAll("\\", "/");
+const defaultDatabasePath = resolve(packageRoot, "../../../data/evidence-gate.db").replaceAll("\\", "/");
 
 export const resolveDatabaseUrl = (): string =>
   process.env.DATABASE_URL ?? `file:${defaultDatabasePath}`;
@@ -154,4 +154,4 @@ export class AnalysisRepository {
   }
 }
 
-export type QualityGuardPrismaClient = PrismaClient;
+export type EvidenceGatePrismaClient = PrismaClient;

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { extname } from "node:path";
-import type { GitChange, GitChangeType, RepositoryAnalysis } from "@qualityguard/core";
+import type { GitChange, GitChangeType, RepositoryAnalysis } from "@evidence-gate/core";
 
 export interface CriticalityRule {
   pathPrefix: string;

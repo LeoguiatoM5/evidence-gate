@@ -1,10 +1,10 @@
 {
-  "name": "@qualityguard/test-runner",
+  "name": "@evidence-gate/test-runner",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
-    "@qualityguard/core": "*"
+    "@evidence-gate/core": "*"
   }
 }

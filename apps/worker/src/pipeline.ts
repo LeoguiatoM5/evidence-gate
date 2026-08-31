@@ -1,6 +1,6 @@
-import type { AnalysisStatus, TestRunnerPort, WorkerStage } from "@qualityguard/core";
-import { WORKER_STAGES } from "@qualityguard/core";
-import type { WorkerAnalysisRepository } from "@qualityguard/persistence-prisma";
+import type { AnalysisStatus, TestRunnerPort, WorkerStage } from "@evidence-gate/core";
+import { WORKER_STAGES } from "@evidence-gate/core";
+import type { WorkerAnalysisRepository } from "@evidence-gate/persistence-prisma";
 import {
   DEFAULT_QUALITY_POLICY,
   buildQualityEvidence,
@@ -8,8 +8,8 @@ import {
   evaluateQualityGate,
   selectTests,
   type QualityPolicy
-} from "@qualityguard/quality-engine";
-import { DEFAULT_RISK_POLICY, assessRisk, type RiskPolicy } from "@qualityguard/risk-engine";
+} from "@evidence-gate/quality-engine";
+import { DEFAULT_RISK_POLICY, assessRisk, type RiskPolicy } from "@evidence-gate/risk-engine";
 
 export class StageError extends Error {
   public constructor(

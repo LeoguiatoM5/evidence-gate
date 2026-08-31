@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { resolve } from "node:path";
-import type { TestSuiteKind } from "@qualityguard/core";
-import { TEST_SUITE_KINDS } from "@qualityguard/core";
-import type { AllowedSuite, ExecutionPolicy, ReportFormat } from "@qualityguard/test-runner";
-import { ExecutionPolicyError, REPORT_FORMATS, assertExecutionPolicy } from "@qualityguard/test-runner";
+import type { TestSuiteKind } from "@evidence-gate/core";
+import { TEST_SUITE_KINDS } from "@evidence-gate/core";
+import type { AllowedSuite, ExecutionPolicy, ReportFormat } from "@evidence-gate/test-runner";
+import { ExecutionPolicyError, REPORT_FORMATS, assertExecutionPolicy } from "@evidence-gate/test-runner";
 
 /**
  * Everything the worker is allowed to execute comes from this operator-owned file.
@@ -94,11 +94,11 @@ export const parseExecutionPolicy = (raw: unknown, env: NodeJS.ProcessEnv): Exec
     workingDirectory: resolve(requireString(raw, "workingDirectory")),
     artifactsRoot: resolve(requireString(raw, "artifactsRoot")),
     timeoutMs: readInteger(
-      env.QG_EXECUTION_TIMEOUT_MS,
+      env.EG_EXECUTION_TIMEOUT_MS,
       typeof raw.timeoutMs === "number" ? raw.timeoutMs : DEFAULTS.timeoutMs
     ),
     maxOutputBytes: readInteger(
-      env.QG_MAX_OUTPUT_BYTES,
+      env.EG_MAX_OUTPUT_BYTES,
       typeof raw.maxOutputBytes === "number" ? raw.maxOutputBytes : DEFAULTS.maxOutputBytes
     ),
     suites: suites.map(parseSuite)
@@ -106,10 +106,10 @@ export const parseExecutionPolicy = (raw: unknown, env: NodeJS.ProcessEnv): Exec
 };
 
 export const loadWorkerConfig = (env: NodeJS.ProcessEnv = process.env): WorkerConfig => {
-  const policyPath = env.QG_EXECUTION_POLICY_FILE;
+  const policyPath = env.EG_EXECUTION_POLICY_FILE;
   if (!policyPath) {
     throw new ExecutionPolicyError(
-      "QG_EXECUTION_POLICY_FILE is not set; the worker refuses to run without an explicit execution allow list."
+      "EG_EXECUTION_POLICY_FILE is not set; the worker refuses to run without an explicit execution allow list."
     );
   }
 
@@ -123,10 +123,10 @@ export const loadWorkerConfig = (env: NodeJS.ProcessEnv = process.env): WorkerCo
   }
 
   return {
-    owner: env.QG_WORKER_ID ?? `${hostname()}-${String(process.pid)}`,
-    leaseMs: readInteger(env.QG_WORKER_LEASE_MS, DEFAULTS.leaseMs),
-    pollIntervalMs: readInteger(env.QG_WORKER_POLL_MS, DEFAULTS.pollIntervalMs),
-    retryBackoffMs: readInteger(env.QG_WORKER_RETRY_BACKOFF_MS, DEFAULTS.retryBackoffMs),
+    owner: env.EG_WORKER_ID ?? `${hostname()}-${String(process.pid)}`,
+    leaseMs: readInteger(env.EG_WORKER_LEASE_MS, DEFAULTS.leaseMs),
+    pollIntervalMs: readInteger(env.EG_WORKER_POLL_MS, DEFAULTS.pollIntervalMs),
+    retryBackoffMs: readInteger(env.EG_WORKER_RETRY_BACKOFF_MS, DEFAULTS.retryBackoffMs),
     policy: parseExecutionPolicy(raw, env)
   };
 };

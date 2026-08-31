@@ -1,7 +1,7 @@
-import type { TestExecutionReport, TestSelection, TestSuiteKind } from "@qualityguard/core";
-import type { QualityEvidence, SuppliedEvidence } from "@qualityguard/quality-engine";
-import { buildQualityEvidence, selectTests } from "@qualityguard/quality-engine";
-import type { RiskLevel } from "@qualityguard/core";
+import type { TestExecutionReport, TestSelection, TestSuiteKind } from "@evidence-gate/core";
+import type { QualityEvidence, SuppliedEvidence } from "@evidence-gate/quality-engine";
+import { buildQualityEvidence, selectTests } from "@evidence-gate/quality-engine";
+import type { RiskLevel } from "@evidence-gate/core";
 
 /** Thin adapters so the CLI feeds the shared domain policy the same shapes the worker does. */
 

@@ -3,7 +3,7 @@ import type {
   TestSelection,
   TestSelectionStrategy,
   TestSuiteKind
-} from "@qualityguard/core";
+} from "@evidence-gate/core";
 
 export interface AvailableSuite {
   key: string;

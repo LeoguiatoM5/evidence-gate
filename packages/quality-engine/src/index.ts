@@ -5,7 +5,7 @@ import type {
   QualityGateResult,
   QualityScoreResult,
   RiskAssessment
-} from "@qualityguard/core";
+} from "@evidence-gate/core";
 
 export interface TestSummary {
   passed: number;

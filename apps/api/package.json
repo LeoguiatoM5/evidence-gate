@@ -1,14 +1,14 @@
 {
-  "name": "@qualityguard/api",
+  "name": "@evidence-gate/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@qualityguard/contracts": "*",
-    "@qualityguard/git-analyzer": "*",
-    "@qualityguard/persistence-prisma": "*",
-    "@qualityguard/quality-engine": "*",
-    "@qualityguard/risk-engine": "*",
+    "@evidence-gate/contracts": "*",
+    "@evidence-gate/git-analyzer": "*",
+    "@evidence-gate/persistence-prisma": "*",
+    "@evidence-gate/quality-engine": "*",
+    "@evidence-gate/risk-engine": "*",
     "@sinclair/typebox": "^0.34.0",
     "dotenv": "^17.0.0",
     "fastify": "^5.0.0"

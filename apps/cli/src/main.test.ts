@@ -6,7 +6,7 @@ import type {
   TestExecutionRequest,
   TestRunnerPort,
   TestSuiteKind
-} from "@qualityguard/core";
+} from "@evidence-gate/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { loadCheckConfig } from "./config.js";
 import { DiffSourceError, resolveDiff } from "./diff-source.js";
@@ -27,7 +27,7 @@ index 1111111..2222222 100644
 `;
 
 const configFile = (overrides: Record<string, unknown> = {}): string => {
-  const path = resolve(testRoot, `qualityguard.${randomUUID()}.json`);
+  const path = resolve(testRoot, `evidence-gate.${randomUUID()}.json`);
   writeFileSync(
     path,
     JSON.stringify({

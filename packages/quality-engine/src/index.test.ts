@@ -1,4 +1,4 @@
-import type { RiskAssessment } from "@qualityguard/core";
+import type { RiskAssessment } from "@evidence-gate/core";
 import { describe, expect, it } from "vitest";
 import {
   calculateQualityScore,

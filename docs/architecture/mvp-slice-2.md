@@ -40,7 +40,7 @@ mudanças já normalizadas no banco.
 ## Segurança de execução
 
 - Nada vindo do payload vira comando, argumento ou diretório. O allow list está em
-  `config/execution-policy.json`, apontado por `QG_EXECUTION_POLICY_FILE`.
+  `config/execution-policy.json`, apontado por `EG_EXECUTION_POLICY_FILE`.
 - `spawn` sem shell (`shell: false`), comando obrigatoriamente absoluto e existente.
 - Timeout com encerramento da árvore de processos (`taskkill /T /F` no Windows).
 - Saída limitada por `maxOutputBytes`; o excedente é descartado e marcado como truncado.
@@ -48,7 +48,7 @@ mudanças já normalizadas no banco.
   `PLAYWRIGHT_JSON_OUTPUT_NAME`; nada do ambiente do worker vaza.
 - Artefatos ficam em `D:\QUALITYGUARD_AI\artifacts\<analysisId>\<suiteKey>` e são
   registrados por caminho relativo, nunca absoluto.
-- `redactText`/`redactValue` (em `@qualityguard/core`) mascaram `Authorization`,
+- `redactText`/`redactValue` (em `@evidence-gate/core`) mascaram `Authorization`,
   `Cookie`, `Set-Cookie`, tokens de provedor, JWT e chaves privadas antes de qualquer
   gravação de mensagem de erro ou log de processo.
 

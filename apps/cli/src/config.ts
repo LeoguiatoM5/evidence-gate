@@ -1,12 +1,12 @@
 import { existsSync, readFileSync, mkdirSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
-import type { TestSuiteKind } from "@qualityguard/core";
-import { TEST_SUITE_KINDS } from "@qualityguard/core";
-import type { CriticalityRule } from "@qualityguard/git-analyzer";
-import type { QualityEvidence } from "@qualityguard/quality-engine";
-import type { RiskMetrics } from "@qualityguard/risk-engine";
-import type { AllowedSuite, ExecutionPolicy, ReportFormat } from "@qualityguard/test-runner";
-import { ExecutionPolicyError, REPORT_FORMATS, assertExecutionPolicy } from "@qualityguard/test-runner";
+import type { TestSuiteKind } from "@evidence-gate/core";
+import { TEST_SUITE_KINDS } from "@evidence-gate/core";
+import type { CriticalityRule } from "@evidence-gate/git-analyzer";
+import type { QualityEvidence } from "@evidence-gate/quality-engine";
+import type { RiskMetrics } from "@evidence-gate/risk-engine";
+import type { AllowedSuite, ExecutionPolicy, ReportFormat } from "@evidence-gate/test-runner";
+import { ExecutionPolicyError, REPORT_FORMATS, assertExecutionPolicy } from "@evidence-gate/test-runner";
 
 /**
  * The project being evaluated owns this file. It is operator configuration checked
@@ -30,7 +30,7 @@ export interface CheckConfig {
   reportPath: string;
 }
 
-export const DEFAULT_CONFIG_FILE = "qualityguard.config.json";
+export const DEFAULT_CONFIG_FILE = "evidence-gate.config.json";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -168,7 +168,7 @@ export const loadCheckConfig = (options: LoadConfigOptions): CheckConfig => {
   const workingDirectory = resolve(configRoot, readString(execution, "workingDirectory", "."));
   const artifactsRoot = resolve(
     configRoot,
-    readString(execution, "artifactsRoot", ".qualityguard/artifacts")
+    readString(execution, "artifactsRoot", ".evidence-gate/artifacts")
   );
   mkdirSync(artifactsRoot, { recursive: true });
 
@@ -190,6 +190,6 @@ export const loadCheckConfig = (options: LoadConfigOptions): CheckConfig => {
       maxOutputBytes,
       suites: readSuites(execution, workingDirectory)
     }),
-    reportPath: resolve(configRoot, options.reportPath ?? "qualityguard-report.html")
+    reportPath: resolve(configRoot, options.reportPath ?? "evidence-gate-report.html")
   };
 };

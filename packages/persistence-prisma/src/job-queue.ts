@@ -1,4 +1,4 @@
-import type { JobStatus } from "@qualityguard/core";
+import type { JobStatus } from "@evidence-gate/core";
 import type { PrismaClient } from "./generated/prisma/client";
 
 /**

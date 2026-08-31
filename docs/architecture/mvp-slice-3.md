@@ -6,7 +6,7 @@ segundos até ver o gate decidindo.
 
 ## O que mudou
 
-1. **`apps/cli` — `qualityguard check`.** Roda a mesma pipeline do worker em um único
+1. **`apps/cli` — `evidence-gate check`.** Roda a mesma pipeline do worker em um único
    processo, sem banco: diff → risco → seleção → execução → score → gate. Descobre o
    diff via `git diff <base>...HEAD`, com fallback para a árvore de trabalho, ou lê um
    patch com `--diff-file`. Sai com código 1 quando o gate reprova — é isso que trava um

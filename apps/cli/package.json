@@ -1,16 +1,16 @@
 {
-  "name": "@qualityguard/cli",
+  "name": "@evidence-gate/cli",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
-    "qualityguard": "./src/cli.ts"
+    "evidence-gate": "./src/cli.ts"
   },
   "dependencies": {
-    "@qualityguard/core": "*",
-    "@qualityguard/git-analyzer": "*",
-    "@qualityguard/quality-engine": "*",
-    "@qualityguard/risk-engine": "*",
-    "@qualityguard/test-runner": "*"
+    "@evidence-gate/core": "*",
+    "@evidence-gate/git-analyzer": "*",
+    "@evidence-gate/quality-engine": "*",
+    "@evidence-gate/risk-engine": "*",
+    "@evidence-gate/test-runner": "*"
   }
 }

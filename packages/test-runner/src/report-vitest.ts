@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import type { TestStatus } from "@qualityguard/core";
-import { redactText } from "@qualityguard/core";
+import type { TestStatus } from "@evidence-gate/core";
+import { redactText } from "@evidence-gate/core";
 import type { ParsedReport, ParsedSuite, ParsedTestResult, ParseOptions } from "./report.js";
 import { TestReportError } from "./report.js";
 

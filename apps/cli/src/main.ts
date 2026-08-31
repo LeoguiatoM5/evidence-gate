@@ -7,17 +7,17 @@ import { renderTerminalReport } from "./report-terminal.js";
 import { runCheck } from "./run-check.js";
 
 const USAGE = `
-qualityguard check — decides whether a change is safe to release.
+evidence-gate check — decides whether a change is safe to release.
 
 Usage:
-  qualityguard check [options]
+  evidence-gate check [options]
 
 Options:
   --cwd <dir>          project directory to evaluate (default: current directory)
-  --config <file>      configuration file (default: qualityguard.config.json)
+  --config <file>      configuration file (default: evidence-gate.config.json)
   --diff-file <file>   analyse a patch file instead of asking git
   --base <ref>         comparison ref (default: baseRef from the configuration)
-  --report <file>      HTML report destination (default: qualityguard-report.html)
+  --report <file>      HTML report destination (default: evidence-gate-report.html)
   --no-report          do not write the HTML report
   --json               print the full result as JSON
   --fail-on <level>    blocked | review (default: review)

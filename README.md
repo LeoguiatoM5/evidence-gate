@@ -1,4 +1,4 @@
-# QualityGuard AI
+# Evidence Gate
 
 **Seu CI diz que passou. Isto diz se dá para confiar.**
 
@@ -13,7 +13,7 @@ RELEASE_APPROVED | REVIEW_REQUIRED | RELEASE_BLOCKED
 
 Uma mudança em `src/payment/limit.ts`. Cinco testes passam. Coverage 72%. O CI fica verde.
 
-O QualityGuard olha a mesma mudança e responde **RELEASE_BLOCKED**:
+O Evidence Gate olha a mesma mudança e responde **RELEASE_BLOCKED**:
 
 ```text
   [FAIL] RELEASE_BLOCKED  checkout-service
@@ -39,18 +39,18 @@ evidência de mitigação. **Teste verde não é prova de qualidade.**
 
 ## Experimente em 30 segundos
 
-```powershell
-.\scripts\qg.ps1 npm install
-.\scripts\qg.ps1 npm run demo
+```bash
+npm install
+npm run demo
 ```
 
 Isso executa o gate contra `examples/checkout-service` — código e testes reais, nada
-simulado — e gera `examples/checkout-service/qualityguard-report.html`.
+simulado — e gera `examples/checkout-service/evidence-gate-report.html`.
 
 A variante saudável do mesmo projeto passa:
 
-```powershell
-.\scripts\qg.ps1 npm run demo:healthy    # RELEASE_APPROVED, exit 0
+```bash
+npm run demo:healthy    # RELEASE_APPROVED, exit 0
 ```
 
 O `npm run demo` termina com **exit code 1** de propósito: é assim que ele trava um
@@ -58,7 +58,7 @@ pipeline.
 
 ## Use no seu projeto
 
-Crie um `qualityguard.config.json` na raiz do repositório a ser avaliado:
+Crie um `evidence-gate.config.json` na raiz do repositório a ser avaliado:
 
 ```json
 {
@@ -87,9 +87,9 @@ Crie um `qualityguard.config.json` na raiz do repositório a ser avaliado:
 E rode:
 
 ```bash
-qualityguard check                 # descobre o diff via git diff origin/main...HEAD
-qualityguard check --fail-on blocked
-qualityguard check --diff-file changes.patch --json
+evidence-gate check                 # descobre o diff via git diff origin/main...HEAD
+evidence-gate check --fail-on blocked
+evidence-gate check --diff-file changes.patch --json
 ```
 
 Formatos de relatório suportados: **vitest/jest** (`vitest-json`) e **Playwright**
@@ -149,10 +149,10 @@ quem quer histórico e execução fora do processo:
 | `GET` | `/api/v1/analyses/:id` | Etapas, execuções, artefatos, risco, score e gate. |
 | `POST` | `/api/v1/analyses/:id/cancel` | Cancela na fila ou entre etapas. |
 
-```powershell
-.\scripts\qg.ps1 npm run db:generate
-.\scripts\qg.ps1 npm run dev:api      # http://127.0.0.1:3333
-.\scripts\qg.ps1 npm run dev:worker
+```bash
+npm run db:generate
+npm run dev:api      # http://127.0.0.1:3333
+npm run dev:worker
 ```
 
 O worker tem máquina de estados idempotente
@@ -162,7 +162,7 @@ no SQLite e retomada após crash sem repetir etapa concluída.
 ## Arquitetura
 
 ```text
-apps/cli/                  qualityguard check — CLI, relatório HTML e exit code
+apps/cli/                  evidence-gate check — CLI, relatório HTML e exit code
 apps/api/                  API Fastify (modo servidor)
 apps/worker/               fila, lease e máquina de estados
 packages/core/             tipos, portas de execução, redação de segredos
@@ -191,13 +191,14 @@ você; o adapter Stryker é o próximo passo), seleção por impacto real do dif
 web, integração com GitHub/PR, autenticação. O `TestSelection.reason` gravado em cada
 análise diz explicitamente o que foi e o que não foi resolvido.
 
-## Ambiente local
+## Desenvolvimento
 
-Neste ambiente o disco `C:` está comprometido, então tudo gravável fica em
-`D:\QUALITYGUARD_AI` e os comandos passam pelo wrapper `.\scripts\qg.ps1`, que isola
-`PATH`, `TEMP`, perfil, cache do npm e `DATABASE_URL`. Em qualquer outra máquina, use
-`npm` normalmente.
+Requer Node 22.12+.
 
-```powershell
-.\scripts\qg.ps1 npm run quality    # lint + typecheck + 62 testes
+```bash
+npm install
+npm run quality    # lint + typecheck + 62 testes
 ```
+
+Os testes de execução rodam subprocessos reais e usam um SQLite temporário; não há mock
+de runner nos casos de sucesso, timeout e crash.

@@ -2,31 +2,31 @@ import { createHash } from "node:crypto";
 import type {
   CreateAnalysisRequest,
   CreateDeterministicAnalysisRequest
-} from "@qualityguard/contracts";
+} from "@evidence-gate/contracts";
 import {
   AnalysisIdParamsSchema,
   CreateAnalysisRequestSchema,
   CreateDeterministicAnalysisRequestSchema
-} from "@qualityguard/contracts";
-import type { RepositoryAnalysis } from "@qualityguard/core";
-import { analyzeGitDiff } from "@qualityguard/git-analyzer";
+} from "@evidence-gate/contracts";
+import type { RepositoryAnalysis } from "@evidence-gate/core";
+import { analyzeGitDiff } from "@evidence-gate/git-analyzer";
 import {
   AnalysisRepository,
   JobQueue,
   WorkerAnalysisRepository,
   createPrismaClient,
-  type QualityGuardPrismaClient
-} from "@qualityguard/persistence-prisma";
+  type EvidenceGatePrismaClient
+} from "@evidence-gate/persistence-prisma";
 import {
   calculateQualityScore,
   DEFAULT_QUALITY_POLICY,
   evaluateQualityGate
-} from "@qualityguard/quality-engine";
-import { assessRisk, DEFAULT_RISK_POLICY } from "@qualityguard/risk-engine";
+} from "@evidence-gate/quality-engine";
+import { assessRisk, DEFAULT_RISK_POLICY } from "@evidence-gate/risk-engine";
 import Fastify, { type FastifyInstance } from "fastify";
 
 export interface BuildAppOptions {
-  prisma?: QualityGuardPrismaClient;
+  prisma?: EvidenceGatePrismaClient;
   logger?: boolean;
 }
 
@@ -65,7 +65,7 @@ export const buildApp = (options: BuildAppOptions = {}): FastifyInstance => {
     await prisma.$disconnect();
   });
 
-  app.get("/health", async () => ({ status: "ok", service: "qualityguard-api" }));
+  app.get("/health", async () => ({ status: "ok", service: "evidence-gate-api" }));
 
   /**
    * Asynchronous intake. The diff is parsed here because the raw diff is never stored;

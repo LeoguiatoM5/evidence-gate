@@ -45,7 +45,7 @@ class BoundedOutput {
 
   public toString(): string {
     const text = Buffer.concat(this.chunks).toString("utf8");
-    return this.truncated ? `${text}\n[output truncated by QualityGuard execution policy]` : text;
+    return this.truncated ? `${text}\n[output truncated by Evidence Gate execution policy]` : text;
   }
 }
 

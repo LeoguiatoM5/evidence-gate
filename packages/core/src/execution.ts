@@ -117,7 +117,7 @@ export interface TestExecutionRequest {
   suiteKey: string;
 }
 
-/** Port implemented by execution adapters such as `@qualityguard/test-runner`. */
+/** Port implemented by execution adapters such as `@evidence-gate/test-runner`. */
 export interface TestRunnerPort {
   readonly name: string;
   /** Suite keys this runner is allowed to execute, resolved from configuration. */
