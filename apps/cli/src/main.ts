@@ -25,6 +25,7 @@ Options:
   --output-json <file> write the full result as JSON to a file
   --mutation           force the mutation run, whatever the risk level
   --no-mutation        skip the mutation run
+  --no-history         do not read risk metrics from the repository history
   --fail-on <level>    blocked | review (default: review)
   --help               show this help
 
@@ -45,6 +46,7 @@ interface ParsedArguments {
   outputJson?: string;
   writeReport: boolean;
   mutation?: boolean;
+  history?: boolean;
   json: boolean;
   failOn: "blocked" | "review";
   help: boolean;
@@ -104,6 +106,9 @@ export const parseArguments = (argv: readonly string[]): ParsedArguments => {
         break;
       case "--no-mutation":
         parsed.mutation = false;
+        break;
+      case "--no-history":
+        parsed.history = false;
         break;
       case "--json":
         parsed.json = true;
@@ -169,6 +174,7 @@ export const main = async (argv: readonly string[]): Promise<number> => {
       diff: diff.diff,
       diffSource: diff.source,
       mutation: options.mutation,
+      history: options.history,
       onStage: options.json
         ? undefined
         : (stage, detail) => {

@@ -67,7 +67,7 @@ Crie um `evidence-gate.config.json` na raiz do repositório a ser avaliado:
   "criticalityRules": [
     { "pathPrefix": "src/payment/", "area": "Payments", "businessCriticality": 90 }
   ],
-  "riskMetrics": { "bugCount": 3, "coverage": 72, "changesLast90Days": 14, "relatedTests": 2 },
+  "riskMetrics": { "coverage": 72 },
   "suppliedEvidence": { "coverage": 72, "mutationScore": 61 },
   "execution": {
     "workingDirectory": ".",
@@ -211,6 +211,8 @@ diff → risco → seleção de suítes por risco → execução → score → g
 
 1. **Risco** (0–100) por criticidade da área, tamanho da mudança, histórico de bugs,
    lacunas de coverage e mutation, falhas anteriores, frequência e testes relacionados.
+   **Frequência de mudança, histórico de bugs e testes relacionados vêm do `git log`** —
+   ninguém digita quantos bugs uma área teve. O que é contado vence o que foi declarado.
 2. **Seleção**: LOW/MEDIUM roda smoke; HIGH/CRITICAL roda regressão + API. Se o projeto
    não declara suíte do tipo pedido, roda todas as permitidas — errar para o lado seguro.
 3. **Execução** de verdade, em subprocesso isolado, com timeout e teto de saída.

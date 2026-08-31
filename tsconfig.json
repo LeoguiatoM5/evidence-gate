@@ -19,6 +19,7 @@
       "@evidence-gate/core": ["packages/core/src/index.ts"],
       "@evidence-gate/contracts": ["packages/contracts/src/index.ts"],
       "@evidence-gate/git-analyzer": ["packages/git-analyzer/src/index.ts"],
+      "@evidence-gate/git-history": ["packages/git-history/src/index.ts"],
       "@evidence-gate/risk-engine": ["packages/risk-engine/src/index.ts"],
       "@evidence-gate/quality-engine": ["packages/quality-engine/src/index.ts"],
       "@evidence-gate/persistence-prisma": ["packages/persistence-prisma/src/index.ts"],

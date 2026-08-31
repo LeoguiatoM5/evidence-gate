@@ -9,6 +9,7 @@
   "dependencies": {
     "@evidence-gate/core": "*",
     "@evidence-gate/git-analyzer": "*",
+    "@evidence-gate/git-history": "*",
     "@evidence-gate/quality-engine": "*",
     "@evidence-gate/risk-engine": "*",
     "@evidence-gate/test-runner": "*"

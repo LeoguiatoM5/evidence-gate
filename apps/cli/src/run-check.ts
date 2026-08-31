@@ -9,6 +9,8 @@ import type {
   TestSelection
 } from "@evidence-gate/core";
 import { analyzeGitDiff } from "@evidence-gate/git-analyzer";
+import type { DerivedMetricsResult } from "@evidence-gate/git-history";
+import { deriveRiskMetrics, discoverTestFiles } from "@evidence-gate/git-history";
 import type { QualityEvidence } from "@evidence-gate/quality-engine";
 import { calculateQualityScore, evaluateQualityGate } from "@evidence-gate/quality-engine";
 import { assessRisk } from "@evidence-gate/risk-engine";
@@ -28,6 +30,8 @@ export interface CheckResult {
   selection: TestSelection;
   executions: TestExecutionReport[];
   evidence: QualityEvidence;
+  /** What the repository history could tell us, and what it could not. */
+  history: DerivedMetricsResult | null;
   /** Null when the project declared no mutation run, or the risk did not require one. */
   mutation: MutationExecutionReport | null;
   quality: QualityScoreResult;
@@ -51,6 +55,10 @@ export interface RunCheckOptions {
   mutationRunner?: MutationRunnerPort;
   /** Forces the mutation run on or off, whatever the configured risk levels are. */
   mutation?: boolean;
+  /** Skips reading the repository history. */
+  history?: boolean;
+  /** Test files considered when counting related tests. */
+  testFiles?: readonly string[];
   onStage?: (stage: string, detail: string) => void;
 }
 
@@ -71,7 +79,9 @@ const runMutation = async (
   if (!shouldRun) {
     notify(
       "MUTATION",
-      `skipped — ${riskLevel} risk is not in ${settings.runOn.join(", ")}`
+      options.mutation === false
+        ? "skipped — disabled with --no-mutation"
+        : `skipped — ${riskLevel} risk is not in ${settings.runOn.join(", ")}`
     );
     return null;
   }
@@ -99,6 +109,24 @@ export const runCheck = async (options: RunCheckOptions): Promise<CheckResult> =
   notify("ANALYZING", "reading the diff");
   const repositoryAnalysis = analyzeGitDiff(options.diff, config.criticalityRules);
 
+  // Counted beats declared: a metric read from the history replaces the value the
+  // configuration guessed. What the history cannot count stays as configured.
+  let history: DerivedMetricsResult | null = null;
+  if (options.history !== false) {
+    history = deriveRiskMetrics({
+      cwd: config.policy.workingDirectory,
+      changedPaths: repositoryAnalysis.changes.map((change) => change.path),
+      testFiles: options.testFiles ?? discoverTestFiles(config.policy.workingDirectory)
+    });
+    notify(
+      "ANALYZING",
+      history.commitsAnalysed === 0
+        ? "no history available"
+        : `${String(history.commitsAnalysed)} commits in the last ${String(history.windowDays)} days`
+    );
+  }
+  const riskMetrics = { ...config.riskMetrics, ...(history?.metrics ?? {}) };
+
   const risk = assessRisk(
     {
       changedFiles: repositoryAnalysis.changes.length,
@@ -106,7 +134,7 @@ export const runCheck = async (options: RunCheckOptions): Promise<CheckResult> =
       inferredBusinessCriticality: Math.max(
         ...repositoryAnalysis.changes.map((change) => change.businessCriticality)
       ),
-      metrics: config.riskMetrics
+      metrics: riskMetrics
     },
     config.policies.risk
   );
@@ -156,6 +184,7 @@ export const runCheck = async (options: RunCheckOptions): Promise<CheckResult> =
     selection,
     executions,
     evidence,
+    history,
     mutation,
     quality,
     gate,

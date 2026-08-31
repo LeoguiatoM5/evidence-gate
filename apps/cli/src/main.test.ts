@@ -281,6 +281,7 @@ describe("check pipeline", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(false)
     });
 
@@ -296,6 +297,7 @@ describe("check pipeline", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(true)
     });
 
@@ -312,6 +314,7 @@ describe("mutation testing", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(false),
       mutationRunner
     });
@@ -329,6 +332,7 @@ describe("mutation testing", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(false),
       mutationRunner
     });
@@ -342,6 +346,7 @@ describe("mutation testing", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(false),
       mutationRunner: new StubMutationRunner("critical-survivor")
     });
@@ -356,6 +361,7 @@ describe("mutation testing", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(false),
       mutationRunner: new StubMutationRunner("failed")
     });
@@ -364,6 +370,20 @@ describe("mutation testing", () => {
     expect(result.evidence.mutationScore).toBeUndefined();
     expect(result.quality.missingEvidence).toContain("mutation");
     expect(result.mutation?.status).toBe("FAILED");
+  });
+
+  it("does not read the history when it is disabled", async () => {
+    const config = loadCheckConfig({ cwd: testRoot, configPath: mutationConfig() });
+    const result = await runCheck({
+      config,
+      diff,
+      diffSource: "test fixture",
+      history: false,
+      runner: new StubRunner(false),
+      mutationRunner: new StubMutationRunner("ok")
+    });
+
+    expect(result.history).toBeNull();
   });
 
   it("skips the run when the risk level is not in runOn, and --no-mutation always skips", async () => {
@@ -389,6 +409,7 @@ describe("mutation testing", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(false),
       mutationRunner: skipped
     });
@@ -400,6 +421,7 @@ describe("mutation testing", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(false),
       mutationRunner: forcedOff,
       mutation: false
@@ -415,6 +437,7 @@ describe("reports", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(true)
     });
     const html = renderHtmlReport(result);
@@ -436,6 +459,7 @@ describe("reports", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(false)
     });
     const html = renderHtmlReport(result);
@@ -450,6 +474,7 @@ describe("reports", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(true)
     });
     const markdown = renderMarkdownReport(result, { commitSha: "abc1234def5678" });
@@ -472,6 +497,7 @@ describe("reports", () => {
       config,
       diff,
       diffSource: "test fixture",
+      history: false,
       runner: new StubRunner(false)
     });
     const markdown = renderMarkdownReport(result);

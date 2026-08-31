@@ -22,6 +22,11 @@ Duas configurações, mesmo código e mesmos testes:
 Em ambos os casos **todos os 9 testes passam**. A diferença na decisão vem do risco da
 área alterada e da evidência disponível — não de teste falhando.
 
+As métricas de risco (`bugCount`, `changesLast90Days`, `relatedTests`) estão declaradas
+na configuração porque este exemplo **não é um repositório git próprio** — ele vive
+dentro do Evidence Gate. Num projeto de verdade, esses números vêm do histórico e não
+precisam ser digitados; por isso o demo passa `--no-history`.
+
 Da raiz do repositório:
 
 ```powershell
