@@ -94,11 +94,25 @@ alerta que nunca apaga é um alerta que ninguém lê.
 
 `qualityPolicy.maximumSurvivedCriticalMutants` resolve: o padrão continua `0`, e um
 projeto que já carrega sobreviventes registra o número atual como catraca. Este
-repositório registra 65, medido em 31/08/2026. Só um sobrevivente novo levanta o aviso,
+repositório registrou 65, medido em 31/08/2026. Só um sobrevivente novo levanta o aviso,
 e o número deve descer, nunca subir.
 
 É diferente de afrouxar um limiar: o valor não muda score nem decisão, ele calibra
 quando um aviso é informação em vez de ruído.
+
+### A catraca pegou a própria mudança que a criou
+
+O commit que adicionou a regra do orçamento também adicionou código — e portanto
+mutantes. A execução seguinte em CI acusou `actual 66, expected <= 65`: dos 14 mutantes
+novos, 13 morreram e um sobreviveu.
+
+Era o ternário que escolhe entre as duas mensagens da regra. O teste existente para
+orçamento zero verificava severidade e contagem, mas não o texto, então trocar a
+condição por `false` não quebrava nada.
+
+A resposta foi matar o sobrevivente, não subir o orçamento para 66 — isso seria a
+catraca girando para trás. Fixar o texto da mensagem no caso de orçamento zero matou
+dois mutantes de uma vez: 66 → 64, e o orçamento desceu de 65 para 64.
 
 ## O sandbox e o layout local
 

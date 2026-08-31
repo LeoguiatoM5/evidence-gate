@@ -132,6 +132,6 @@
       "riskControl": 7,
       "coverage": 5
     },
-    "maximumSurvivedCriticalMutants": 65
+    "maximumSurvivedCriticalMutants": 64
   }
 }

@@ -283,6 +283,9 @@ describe("gate warnings", () => {
     expect(reason?.severity).toBe("WARNING");
     expect(reason?.actual).toBe(3);
     expect(gate.decision).toBe("REVIEW_REQUIRED");
+    // With the default budget of zero the wording is absolute, not a budget overrun.
+    expect(reason?.message).toBe("Survived mutants exist in a critical area.");
+    expect(reason?.expected).toBe("<= 0");
   });
 
   it("warns above the recorded budget, not at it", () => {
