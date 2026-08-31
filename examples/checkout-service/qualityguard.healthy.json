@@ -1,0 +1,67 @@
+{
+  "project": "checkout-service",
+  "baseRef": "origin/main",
+  "criticalityRules": [
+    {
+      "pathPrefix": "src/payment/",
+      "area": "Payments",
+      "businessCriticality": 90
+    },
+    {
+      "pathPrefix": "src/cart/",
+      "area": "Cart",
+      "businessCriticality": 55
+    }
+  ],
+  "riskMetrics": {
+    "bugCount": 0,
+    "coverage": 94,
+    "mutationScore": 88,
+    "previousFailureRate": 0,
+    "changesLast90Days": 2,
+    "relatedTests": 9
+  },
+  "suppliedEvidence": {
+    "coverage": 94,
+    "mutationScore": 88,
+    "mitigationCoverage": 100,
+    "criticalSecurityIssues": 0,
+    "survivedCriticalMutants": 0
+  },
+  "execution": {
+    "workingDirectory": ".",
+    "artifactsRoot": ".qualityguard/artifacts",
+    "timeoutMs": 120000,
+    "maxOutputBytes": 1048576,
+    "suites": [
+      {
+        "key": "unit",
+        "kind": "REGRESSION",
+        "command": "node",
+        "args": [
+          "../../node_modules/vitest/vitest.mjs",
+          "run",
+          "tests/unit",
+          "--reporter=json",
+          "--outputFile={{reportPath}}"
+        ],
+        "reportFormat": "vitest-json",
+        "critical": false
+      },
+      {
+        "key": "api-contract",
+        "kind": "API",
+        "command": "node",
+        "args": [
+          "../../node_modules/vitest/vitest.mjs",
+          "run",
+          "tests/api",
+          "--reporter=json",
+          "--outputFile={{reportPath}}"
+        ],
+        "reportFormat": "vitest-json",
+        "critical": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+diff --git a/src/payment/limit.ts b/src/payment/limit.ts
+index 3f1a2b4..9c7e5d1 100644
+--- a/src/payment/limit.ts
++++ b/src/payment/limit.ts
+@@ -1,10 +1,20 @@
+ export type CustomerTier = "STANDARD" | "PREMIUM";
+ 
+ export interface PaymentRequest {
+   amountCents: number;
+   dailySpentCents: number;
++  tier: CustomerTier;
+ }
+ 
+-const DAILY_CEILING_CENTS = 200_000;
++const DAILY_CEILING_CENTS: Record<CustomerTier, number> = {
++  STANDARD: 200_000,
++  PREMIUM: 1_000_000
++};
++
++const SINGLE_PAYMENT_CEILING_CENTS: Record<CustomerTier, number> = {
++  STANDARD: 50_000,
++  PREMIUM: 300_000
++};
+ 
+ export const evaluatePaymentLimit = (request: PaymentRequest): LimitDecision => {
+-  const remainingCents = Math.max(0, DAILY_CEILING_CENTS - request.dailySpentCents);
++  const dailyCeiling = DAILY_CEILING_CENTS[request.tier];
++  const remainingCents = Math.max(0, dailyCeiling - request.dailySpentCents);
++
++  if (request.amountCents > SINGLE_PAYMENT_CEILING_CENTS[request.tier]) {
++    return { allowed: false, reason: "SINGLE_PAYMENT_TOO_LARGE", remainingCents };
++  }
+diff --git a/src/cart/summary.ts b/src/cart/summary.ts
+index 1a2b3c4..5d6e7f8 100644
+--- a/src/cart/summary.ts
++++ b/src/cart/summary.ts
+@@ -4,6 +4,7 @@ export interface CartSummary {
+   totalCents: number;
+ }
+ 
+-export const summarise = (items: CartItem[]): CartSummary =>
+-  ({ totalCents: items.reduce((total, item) => total + item.priceCents, 0) });
++export const summarise = (items: CartItem[]): CartSummary => ({
++  totalCents: items.reduce((total, item) => total + item.priceCents * item.quantity, 0)
++});

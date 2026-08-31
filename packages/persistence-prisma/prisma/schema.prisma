@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Project {
+  id           String       @id @default(cuid())
+  name         String
+  slug         String       @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  repositories Repository[]
+}
+
+model Repository {
+  id            String     @id @default(cuid())
+  projectId     String
+  provider      String     @default("LOCAL")
+  name          String
+  defaultBranch String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  project       Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  analyses      Analysis[]
+
+  @@unique([projectId, name])
+}
+
+model Analysis {
+  id               String          @id @default(cuid())
+  repositoryId     String
+  branch           String
+  baseSha          String?
+  headSha          String
+  idempotencyKey   String          @unique
+  status           String
+  diffHash         String
+  affectedAreas    Json
+  policyVersion    String
+  startedAt        DateTime        @default(now())
+  completedAt      DateTime?
+  createdAt        DateTime        @default(now())
+  repository       Repository      @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  stages           AnalysisStage[]
+  changes          GitChange[]
+  riskAssessment   RiskAssessment?
+  qualityScore     QualityScore?
+  qualityGate      QualityGate?
+  input            AnalysisInput?
+  job              AnalysisJob?
+  testSelection    TestSelection?
+  executions       TestExecution[]
+
+  @@index([repositoryId, headSha])
+  @@index([status, createdAt])
+}
+
+model AnalysisStage {
+  id          String    @id @default(cuid())
+  analysisId  String
+  name        String
+  status      String
+  attempts    Int       @default(0)
+  startedAt   DateTime?
+  completedAt DateTime?
+  errorCode   String?
+  analysis    Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@unique([analysisId, name])
+}
+
+model GitChange {
+  id                  String   @id @default(cuid())
+  analysisId          String
+  path                String
+  oldPath             String?
+  type                String
+  additions           Int
+  deletions           Int
+  extension           String?
+  area                String
+  businessCriticality Float
+  analysis            Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId, area])
+}
+
+model RiskAssessment {
+  id              String   @id @default(cuid())
+  analysisId      String   @unique
+  score           Int
+  level           String
+  confidence      Float
+  factors         Json
+  missingEvidence Json
+  createdAt       DateTime @default(now())
+  analysis        Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model QualityScore {
+  id              String   @id @default(cuid())
+  analysisId      String   @unique
+  score           Int
+  confidence      Float
+  components      Json
+  missingEvidence Json
+  createdAt       DateTime @default(now())
+  analysis        Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model QualityGate {
+  id             String   @id @default(cuid())
+  analysisId     String   @unique
+  decision       String
+  reasons        Json
+  evaluatedRules Json
+  createdAt      DateTime @default(now())
+  analysis       Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+/// Intake data the worker needs after the HTTP request returned. The raw diff is
+/// never stored; only the hash and the normalized changes are kept.
+model AnalysisInput {
+  id               String   @id @default(cuid())
+  analysisId       String   @unique
+  riskMetrics      Json
+  suppliedEvidence Json
+  createdAt        DateTime @default(now())
+  analysis         Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+/// Queue row leased by a worker. One job per analysis keeps enqueueing idempotent.
+model AnalysisJob {
+  id               String    @id @default(cuid())
+  analysisId       String    @unique
+  status           String    @default("QUEUED")
+  attempts         Int       @default(0)
+  maxAttempts      Int       @default(3)
+  leaseOwner       String?
+  leaseExpiresAt   DateTime?
+  availableAt      DateTime  @default(now())
+  cancelRequested  Boolean   @default(false)
+  lastErrorCode    String?
+  lastErrorMessage String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  analysis         Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([status, availableAt])
+  @@index([status, leaseExpiresAt])
+}
+
+model TestSelection {
+  id         String   @id @default(cuid())
+  analysisId String   @unique
+  strategy   String
+  riskLevel  String
+  suiteKeys  Json
+  reason     String
+  createdAt  DateTime @default(now())
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model TestExecution {
+  id              String     @id @default(cuid())
+  analysisId      String
+  suiteKey        String
+  kind            String
+  runner          String
+  status          String
+  exitCode        Int?
+  durationMs      Int
+  timedOut        Boolean    @default(false)
+  outputTruncated Boolean    @default(false)
+  errorMessage    String?
+  startedAt       DateTime   @default(now())
+  completedAt     DateTime?
+  analysis        Analysis   @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  suites          TestSuite[]
+  artifacts       Artifact[]
+
+  @@unique([analysisId, suiteKey])
+  @@index([analysisId, status])
+}
+
+model TestSuite {
+  id          String        @id @default(cuid())
+  executionId String
+  title       String
+  file        String
+  durationMs  Int
+  execution   TestExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  results     TestResult[]
+
+  @@index([executionId])
+}
+
+model TestResult {
+  id           String    @id @default(cuid())
+  suiteId      String
+  identity     String
+  title        String
+  status       String
+  durationMs   Int
+  retries      Int       @default(0)
+  critical     Boolean   @default(false)
+  errorType    String?
+  errorMessage String?
+  suite        TestSuite @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+
+  @@index([suiteId])
+  @@index([identity])
+}
+
+model Artifact {
+  id          String        @id @default(cuid())
+  executionId String
+  type        String
+  path        String
+  sizeBytes   Int
+  contentType String?
+  createdAt   DateTime      @default(now())
+  execution   TestExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+}

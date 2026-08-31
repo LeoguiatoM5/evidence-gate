@@ -1,0 +1,26 @@
+node_modules/
+dist/
+coverage/
+
+# Everything below is local to D:\QUALITYGUARD_AI and must never be committed.
+.cache/
+.local/
+.tmp/
+.tooling/
+artifacts/*
+!artifacts/.gitkeep
+data/*.db
+data/*.db-journal
+data/*.db-shm
+data/*.db-wal
+
+.env
+config/execution-policy.json
+examples/*/node_modules/
+examples/*/.qualityguard/
+qualityguard-report.html
+packages/persistence-prisma/src/generated/
+
+*.log
+.DS_Store
+Thumbs.db

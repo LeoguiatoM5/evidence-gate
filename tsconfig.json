@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "useUnknownInCatchVariables": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@qualityguard/core": ["packages/core/src/index.ts"],
+      "@qualityguard/contracts": ["packages/contracts/src/index.ts"],
+      "@qualityguard/git-analyzer": ["packages/git-analyzer/src/index.ts"],
+      "@qualityguard/risk-engine": ["packages/risk-engine/src/index.ts"],
+      "@qualityguard/quality-engine": ["packages/quality-engine/src/index.ts"],
+      "@qualityguard/persistence-prisma": ["packages/persistence-prisma/src/index.ts"],
+      "@qualityguard/test-runner": ["packages/test-runner/src/index.ts"]
+    },
+    "types": ["node"]
+  },
+  "include": [
+    "apps/**/*.ts",
+    "packages/**/*.ts",
+    "tests/**/*.ts",
+    "examples/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "artifacts",
+    ".cache",
+    ".local",
+    ".tmp",
+    ".tooling"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "workingDirectory": "D:/QUALITYGUARD_AI/../my-project",
+  "artifactsRoot": "D:/QUALITYGUARD_AI/artifacts",
+  "timeoutMs": 900000,
+  "maxOutputBytes": 1048576,
+  "suites": [
+    {
+      "key": "smoke",
+      "kind": "SMOKE",
+      "command": "D:/QUALITYGUARD_AI/.tooling/node/node-v22.23.2-win-x64/node.exe",
+      "args": ["./node_modules/@playwright/test/cli.js", "test", "--grep", "@smoke", "--reporter=json"],
+      "critical": true,
+      "reportFormat": "playwright-json"
+    },
+    {
+      "key": "regression",
+      "kind": "REGRESSION",
+      "command": "D:/QUALITYGUARD_AI/.tooling/node/node-v22.23.2-win-x64/node.exe",
+      "args": ["./node_modules/@playwright/test/cli.js", "test", "--reporter=json"],
+      "critical": false,
+      "reportFormat": "playwright-json"
+    },
+    {
+      "key": "api",
+      "kind": "API",
+      "command": "D:/QUALITYGUARD_AI/.tooling/node/node-v22.23.2-win-x64/node.exe",
+      "args": ["./node_modules/@playwright/test/cli.js", "test", "tests/api", "--reporter=json"],
+      "critical": false,
+      "reportFormat": "playwright-json"
+    }
+  ]
+}

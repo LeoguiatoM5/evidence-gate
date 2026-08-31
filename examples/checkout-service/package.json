@@ -1,0 +1,7 @@
+{
+  "name": "checkout-service-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Projeto de exemplo avaliado pelo QualityGuard. Código e testes reais."
+}

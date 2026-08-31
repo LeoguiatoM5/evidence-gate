@@ -1,0 +1,14 @@
+{
+  "name": "@qualityguard/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@qualityguard/core": "*",
+    "@qualityguard/persistence-prisma": "*",
+    "@qualityguard/quality-engine": "*",
+    "@qualityguard/risk-engine": "*",
+    "@qualityguard/test-runner": "*",
+    "dotenv": "^17.0.0"
+  }
+}
