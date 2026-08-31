@@ -18,6 +18,7 @@ data/*.db-wal
 config/execution-policy.json
 examples/*/node_modules/
 examples/*/.evidence-gate/
+reports/
 examples/*/artifacts/
 .evidence-gate/
 evidence-gate-report.html

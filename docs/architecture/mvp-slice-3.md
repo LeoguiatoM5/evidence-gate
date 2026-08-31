@@ -53,6 +53,5 @@ dois no mesmo parágrafo.
 
 - O CLI é sem estado por opção: não grava no SQLite. Histórico é responsabilidade do
   modo servidor.
-- `mutationScore` continua sendo valor informado na configuração; o adapter Stryker é o
-  próximo incremento.
-- A seleção continua por nível de risco, não por impacto real do diff.
+- `mutationScore` era informado na configuração; passou a ser medido no Incremento 5.
+- A seleção continua por nível de risco, não por impacto real do diff (Incremento 6).

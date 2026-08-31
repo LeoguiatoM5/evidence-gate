@@ -22,6 +22,8 @@ export * from "./policy.js";
 export * from "./report.js";
 export * from "./report-vitest.js";
 export * from "./process.js";
+export * from "./mutation.js";
+export * from "./report-stryker.js";
 
 const REPORT_FILE_NAME = "test-report.json";
 const REPORT_PATH_TOKEN = "{{reportPath}}";

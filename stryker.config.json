@@ -1,0 +1,48 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "npm",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "stryker.vitest.config.ts"
+  },
+  "reporters": [
+    "json",
+    "clear-text",
+    "progress"
+  ],
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  },
+  "mutate": [
+    "packages/quality-engine/src/**/*.ts",
+    "packages/risk-engine/src/**/*.ts",
+    "!packages/**/*.test.ts"
+  ],
+  "coverageAnalysis": "perTest",
+  "timeoutMS": 20000,
+  "tempDirName": ".tmp/stryker",
+  "thresholds": {
+    "high": 85,
+    "low": 70,
+    "break": null
+  },
+  "ignorePatterns": [
+    ".cache",
+    ".local",
+    ".tmp",
+    ".tooling",
+    "artifacts",
+    "data",
+    "coverage",
+    "reports",
+    ".evidence-gate",
+    ".git",
+    ".github",
+    "docs",
+    "examples",
+    "**/node_modules",
+    "**/generated",
+    "*.log",
+    "*.db"
+  ]
+}

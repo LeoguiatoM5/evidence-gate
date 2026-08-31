@@ -94,7 +94,7 @@ copy config\execution-policy.example.json config\execution-policy.json
 ## Limites conhecidos
 
 - A seleção por impacto (suítes relacionadas ao diff) depende do mapa de impacto do
-  Incremento 4. Hoje a seleção é por nível de risco sobre o allow list, e o motivo
+  Incremento 6. Hoje a seleção é por nível de risco sobre o allow list, e o motivo
   gravado em `TestSelection.reason` diz isso explicitamente.
-- Mutation testing continua sendo valor informado; o adapter Stryker é do Incremento 5.
+- Mutation testing passou a ser medido no Incremento 5.
 - Um worker por vez. SQLite com lease serve ao MVP; múltiplos workers exigem PostgreSQL.

@@ -104,7 +104,21 @@
         "reportFormat": "vitest-json",
         "critical": false
       }
-    ]
+    ],
+    "mutation": {
+      "command": "node",
+      "args": [
+        "./node_modules/@stryker-mutator/core/bin/stryker.js",
+        "run"
+      ],
+      "reportPath": "reports/mutation/mutation.json",
+      "timeoutMs": 2700000,
+      "runOn": [
+        "HIGH",
+        "CRITICAL"
+      ],
+      "criticalityThreshold": 85
+    }
   },
   "qualityPolicy": {
     "version": "quality-v1-evidence-gate",

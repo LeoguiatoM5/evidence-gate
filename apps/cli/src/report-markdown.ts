@@ -110,6 +110,34 @@ const renderFailures = (result: CheckResult): string => {
 ${rows}${more}`;
 };
 
+const renderMutation = (result: CheckResult): string => {
+  if (!result.mutation) return "";
+  const mutation = result.mutation.mutation;
+
+  if (!mutation) {
+    return `
+
+### Mutation testing
+
+The mutation run finished as \`${result.mutation.status}\` and produced no evidence: ${cell(result.mutation.errorMessage ?? "no report")}`;
+  }
+
+  const critical =
+    mutation.survivedCriticalMutants > 0
+      ? `
+
+❌ **${String(mutation.survivedCriticalMutants)} mutant(s) survived in a critical area.**`
+      : "";
+
+  return `
+
+### Mutation testing
+
+| Score | Killed | Survived | Uncovered | Timeout |
+|---|---|---|---|---|
+| **${String(mutation.mutationScore)}** | ${String(mutation.totals.killed)} | ${String(mutation.totals.survived)} | ${String(mutation.totals.noCoverage)} | ${String(mutation.totals.timeout)} |${critical}`;
+};
+
 const renderRiskFactors = (result: CheckResult): string => {
   const rows = result.risk.factors
     .map(
@@ -155,7 +183,7 @@ ${renderReasons(result.gate.reasons)}
 
 ### Test execution
 
-${renderExecutions(result)}${renderFailures(result)}${renderRiskFactors(result)}
+${renderExecutions(result)}${renderFailures(result)}${renderMutation(result)}${renderRiskFactors(result)}
 
 <sub>${cell(result.projectName)} · ${String(result.repositoryAnalysis.changes.length)} file(s) · areas: ${cell(result.repositoryAnalysis.affectedAreas.join(", "))} · policy ${cell(result.policyVersion)}${commit}</sub>
 `;

@@ -23,6 +23,8 @@ Options:
   --json               print the full result as JSON
   --summary <file>     write a Markdown summary (pull request comment, CI summary)
   --output-json <file> write the full result as JSON to a file
+  --mutation           force the mutation run, whatever the risk level
+  --no-mutation        skip the mutation run
   --fail-on <level>    blocked | review (default: review)
   --help               show this help
 
@@ -42,6 +44,7 @@ interface ParsedArguments {
   summary?: string;
   outputJson?: string;
   writeReport: boolean;
+  mutation?: boolean;
   json: boolean;
   failOn: "blocked" | "review";
   help: boolean;
@@ -95,6 +98,12 @@ export const parseArguments = (argv: readonly string[]): ParsedArguments => {
         break;
       case "--no-report":
         parsed.writeReport = false;
+        break;
+      case "--mutation":
+        parsed.mutation = true;
+        break;
+      case "--no-mutation":
+        parsed.mutation = false;
         break;
       case "--json":
         parsed.json = true;
@@ -159,6 +168,7 @@ export const main = async (argv: readonly string[]): Promise<number> => {
       config,
       diff: diff.diff,
       diffSource: diff.source,
+      mutation: options.mutation,
       onStage: options.json
         ? undefined
         : (stage, detail) => {

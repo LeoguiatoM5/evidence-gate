@@ -158,6 +158,44 @@ impedindo aprovação automática — muda apenas quanto ele pesa no score.
 É por isso que este repositório fica em `REVIEW_REQUIRED` no próprio gate: os 64 testes
 passam, mas ele ainda não mede mutation nem coverage, e diz isso.
 
+## Mutation testing
+
+Um teste que passa não prova que ele testa alguma coisa. Mutation testing altera o
+código de propósito e verifica se algum teste quebra — é a evidência que separa
+"coverage alta" de "testes que realmente pegam bug".
+
+Declare o comando no mesmo arquivo de configuração:
+
+```json
+"execution": {
+  "mutation": {
+    "command": "node",
+    "args": ["./node_modules/@stryker-mutator/core/bin/stryker.js", "run"],
+    "reportPath": "reports/mutation/mutation.json",
+    "runOn": ["HIGH", "CRITICAL"],
+    "criticalityThreshold": 85
+  }
+}
+```
+
+- **`runOn`** — mutation é lento, então só roda nos níveis de risco que justificam.
+  `--mutation` e `--no-mutation` forçam na linha de comando.
+- **`reportPath`** — onde a ferramenta grava o relatório. O Stryker decide isso pela
+  configuração dele, então o projeto declara aqui em vez de a ferramenta adivinhar.
+- **`criticalityThreshold`** — um mutante sobrevivente em arquivo com criticidade igual
+  ou acima disso vira `survivedCriticalMutants`, que o gate trata como bloqueador.
+
+Qualquer ferramenta que emita o [mutation-testing report schema](https://github.com/stryker-mutator/mutation-testing-elements)
+serve; o adapter não é acoplado ao Stryker.
+
+Duas regras valem aqui:
+
+- **Evidência executada vence a informada.** Se o projeto declarou `mutationScore: 90`
+  em `suppliedEvidence` e a execução mediu 61, vale 61.
+- **Execução que falhou não cai de volta no valor informado.** Se o run quebrou, o
+  mutation score fica *ausente* — vira lacuna de evidência, não um número otimista
+  herdado da configuração.
+
 ## Como a decisão é formada
 
 ```text
@@ -244,12 +282,17 @@ Decisões e trade-offs: `docs/adr/`. Escopo de cada incremento:
 
 ## Estado e limites
 
-Funciona hoje: CLI, relatório HTML, execução vitest/jest e Playwright, API, worker,
+Funciona hoje: CLI, relatório HTML, execução vitest/jest e Playwright, mutation testing
+via Stryker, GitHub Action com comentário no PR, política por projeto, API, worker e
 persistência.
 
-Ainda **não** existe: mutation testing executado (o `mutationScore` é informado por
-você; o adapter Stryker é o próximo passo), seleção por impacto real do diff, dashboard
-web, integração com GitHub/PR, autenticação. O `TestSelection.reason` gravado em cada
+**Dívida conhecida, medida pela própria ferramenta:** os motores de domínio pontuam
+`57.4` em mutation testing (172 mutantes sobreviventes), abaixo do mínimo de 75 que o
+projeto adota. Está registrado em `docs/architecture/mvp-slice-5.md` e não foi
+contornado baixando o limiar.
+
+Ainda **não** existe: seleção por impacto real do diff, dashboard web, autenticação,
+nem análise determinística de falhas. O `TestSelection.reason` gravado em cada
 análise diz explicitamente o que foi e o que não foi resolvido.
 
 ## Desenvolvimento

@@ -20,6 +20,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "mutation": "stryker run",
     "quality": "npm run lint && npm run typecheck && npm test",
     "db:generate": "prisma generate --config packages/persistence-prisma/prisma.config.ts",
     "db:migrate:init": "prisma migrate dev --config packages/persistence-prisma/prisma.config.ts --name init",
@@ -29,6 +30,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/vitest-runner": "^10.0.0",
     "@types/better-sqlite3": "^7.6.0",
     "@types/node": "^22.0.0",
     "eslint": "^10.0.0",

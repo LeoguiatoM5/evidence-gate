@@ -365,6 +365,74 @@ const renderFailedTests = (result: CheckResult): string => {
     </section>`;
 };
 
+const renderMutation = (result: CheckResult): string => {
+  if (!result.mutation) return "";
+  const mutation = result.mutation.mutation;
+
+  if (!mutation) {
+    return `
+    <section>
+      <h2>Mutation testing</h2>
+      <p class="empty">The mutation run finished as ${escapeHtml(result.mutation.status)} and produced no evidence: ${escapeHtml(result.mutation.errorMessage ?? "no report")}</p>
+    </section>`;
+  }
+
+  const criticalWarning =
+    mutation.survivedCriticalMutants > 0
+      ? `<p class="subtle"><span class="chip" data-status="critical">&#10005; ${String(mutation.survivedCriticalMutants)} survivor(s) in a critical area</span></p>`
+      : "";
+
+  const survivors = mutation.survivors
+    .slice(0, 15)
+    .map(
+      (survivor) => `
+        <tr>
+          <td><code>${escapeHtml(survivor.file)}</code></td>
+          <td>${String(survivor.line)}</td>
+          <td>${escapeHtml(survivor.mutator)}</td>
+          <td>${escapeHtml(survivor.status === "NO_COVERAGE" ? "not covered" : "survived")}</td>
+          <td>${survivor.critical ? '<span class="chip" data-status="critical">critical</span>' : ""}</td>
+        </tr>`
+    )
+    .join("");
+
+  return `
+    <section>
+      <h2>Mutation testing</h2>
+      <div class="tiles">
+        <div class="tile">
+          <p class="tile-label">Mutation score</p>
+          <p class="tile-value">${String(mutation.mutationScore)}</p>
+          <p class="tile-note">${String(mutation.filesAnalysed)} file(s) analysed</p>
+        </div>
+        <div class="tile">
+          <p class="tile-label">Killed / survived</p>
+          <p class="tile-value">${String(mutation.totals.killed)} / ${String(mutation.totals.survived)}</p>
+          <p class="tile-note">${String(mutation.totals.noCoverage)} uncovered · ${String(mutation.totals.timeout)} timeout</p>
+        </div>
+      </div>
+      ${criticalWarning}
+      ${
+        survivors === ""
+          ? '<p class="empty">No mutant survived.</p>'
+          : `<div class="scroll">
+        <table class="data">
+          <thead>
+            <tr>
+              <th scope="col">File</th>
+              <th scope="col">Line</th>
+              <th scope="col">Mutator</th>
+              <th scope="col">Status</th>
+              <th scope="col">Area</th>
+            </tr>
+          </thead>
+          <tbody>${survivors}</tbody>
+        </table>
+      </div>`
+      }
+    </section>`;
+};
+
 const renderChanges = (result: CheckResult): string => {
   const rows = result.repositoryAnalysis.changes
     .map(
@@ -509,7 +577,7 @@ ${brokenBanner}
     <p class="subtle">${escapeHtml(result.selection.strategy)} — ${escapeHtml(result.selection.reason)}</p>
     ${renderExecutions(result)}
   </section>
-${renderFailedTests(result)}
+${renderFailedTests(result)}${renderMutation(result)}
   <section>
     <h2>Analysed changes</h2>
     <p class="subtle">${String(result.repositoryAnalysis.changes.length)} file(s) · ${String(result.repositoryAnalysis.totalChangedLines)} line(s) · areas: ${escapeHtml(result.repositoryAnalysis.affectedAreas.join(", "))}</p>

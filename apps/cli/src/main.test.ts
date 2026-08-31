@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type {
+  MutationExecutionReport,
+  MutationRunRequest,
+  MutationRunnerPort,
   TestExecutionReport,
   TestExecutionRequest,
   TestRunnerPort,
@@ -114,6 +117,84 @@ class StubRunner implements TestRunnerPort {
   }
 }
 
+/** Mutation runner stub: the adapter itself is covered in the test-runner package. */
+class StubMutationRunner implements MutationRunnerPort {
+  public readonly name = "stub-mutation";
+  public calls: MutationRunRequest[] = [];
+
+  public constructor(private readonly outcome: "ok" | "critical-survivor" | "failed") {}
+
+  public run(request: MutationRunRequest): Promise<MutationExecutionReport> {
+    this.calls.push(request);
+    if (this.outcome === "failed") {
+      return Promise.resolve({
+        status: "FAILED",
+        exitCode: 1,
+        durationMs: 5,
+        timedOut: false,
+        outputTruncated: false,
+        errorMessage: "the mutation run produced no report",
+        mutation: null,
+        artifacts: []
+      });
+    }
+    return Promise.resolve({
+      status: "COMPLETED",
+      exitCode: 0,
+      durationMs: 5,
+      timedOut: false,
+      outputTruncated: false,
+      errorMessage: null,
+      mutation: {
+        mutationScore: this.outcome === "ok" ? 92 : 88,
+        totals: {
+          killed: 46,
+          survived: 4,
+          timeout: 0,
+          noCoverage: 0,
+          compileError: 0,
+          runtimeError: 0,
+          ignored: 0
+        },
+        survivedCriticalMutants: this.outcome === "critical-survivor" ? 2 : 0,
+        survivors: [],
+        filesAnalysed: 8
+      },
+      artifacts: []
+    });
+  }
+}
+
+const mutationConfig = (): string =>
+  configFile({
+    suppliedEvidence: {
+      coverage: 95,
+      mutationScore: 99,
+      mitigationCoverage: 100,
+      criticalSecurityIssues: 0,
+      survivedCriticalMutants: 0
+    },
+    execution: {
+      workingDirectory: ".",
+      artifactsRoot: "artifacts",
+      mutation: {
+        command: "node",
+        args: ["--version"],
+        reportPath: "reports/mutation.json",
+        runOn: ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+      },
+      suites: [
+        {
+          key: "unit",
+          kind: "REGRESSION",
+          command: "node",
+          args: ["--version"],
+          reportFormat: "vitest-json"
+        }
+      ]
+    }
+  });
+
 beforeAll(() => {
   mkdirSync(testRoot, { recursive: true });
 });
@@ -220,6 +301,110 @@ describe("check pipeline", () => {
 
     expect(result.gate.decision).toBe("RELEASE_BLOCKED");
     expect(result.gate.reasons.map((reason) => reason.code)).toContain("CRITICAL_TEST_FAILURE");
+  });
+});
+
+describe("mutation testing", () => {
+  it("replaces the supplied mutation score with the measured one", async () => {
+    const config = loadCheckConfig({ cwd: testRoot, configPath: mutationConfig() });
+    const mutationRunner = new StubMutationRunner("ok");
+    const result = await runCheck({
+      config,
+      diff,
+      diffSource: "test fixture",
+      runner: new StubRunner(false),
+      mutationRunner
+    });
+
+    // The configuration declared 99; the executed run measured 92 and wins.
+    expect(result.evidence.mutationScore).toBe(92);
+    expect(result.mutation?.status).toBe("COMPLETED");
+    expect(mutationRunner.calls).toHaveLength(1);
+  });
+
+  it("passes the critical path prefixes taken from the criticality rules", async () => {
+    const config = loadCheckConfig({ cwd: testRoot, configPath: mutationConfig() });
+    const mutationRunner = new StubMutationRunner("ok");
+    await runCheck({
+      config,
+      diff,
+      diffSource: "test fixture",
+      runner: new StubRunner(false),
+      mutationRunner
+    });
+
+    expect(mutationRunner.calls[0]?.criticalPathPrefixes).toEqual(["src/payment/"]);
+  });
+
+  it("blocks the release when a mutant survived in a critical area", async () => {
+    const config = loadCheckConfig({ cwd: testRoot, configPath: mutationConfig() });
+    const result = await runCheck({
+      config,
+      diff,
+      diffSource: "test fixture",
+      runner: new StubRunner(false),
+      mutationRunner: new StubMutationRunner("critical-survivor")
+    });
+
+    expect(result.evidence.survivedCriticalMutants).toBe(2);
+    expect(result.gate.reasons.map((reason) => reason.code)).toContain("CRITICAL_SURVIVED_MUTANT");
+  });
+
+  it("treats a failed run as missing evidence instead of falling back to the config", async () => {
+    const config = loadCheckConfig({ cwd: testRoot, configPath: mutationConfig() });
+    const result = await runCheck({
+      config,
+      diff,
+      diffSource: "test fixture",
+      runner: new StubRunner(false),
+      mutationRunner: new StubMutationRunner("failed")
+    });
+
+    // The configuration declared 99, but a measurement was attempted and failed.
+    expect(result.evidence.mutationScore).toBeUndefined();
+    expect(result.quality.missingEvidence).toContain("mutation");
+    expect(result.mutation?.status).toBe("FAILED");
+  });
+
+  it("skips the run when the risk level is not in runOn, and --no-mutation always skips", async () => {
+    const path = configFile({
+      execution: {
+        workingDirectory: ".",
+        artifactsRoot: "artifacts",
+        mutation: {
+          command: "node",
+          args: ["--version"],
+          reportPath: "reports/mutation.json",
+          runOn: ["CRITICAL"]
+        },
+        suites: [
+          { key: "unit", kind: "REGRESSION", command: "node", args: ["--version"], reportFormat: "vitest-json" }
+        ]
+      }
+    });
+    const config = loadCheckConfig({ cwd: testRoot, configPath: path });
+
+    const skipped = new StubMutationRunner("ok");
+    const notCritical = await runCheck({
+      config,
+      diff,
+      diffSource: "test fixture",
+      runner: new StubRunner(false),
+      mutationRunner: skipped
+    });
+    expect(skipped.calls).toHaveLength(0);
+    expect(notCritical.mutation).toBeNull();
+
+    const forcedOff = new StubMutationRunner("ok");
+    await runCheck({
+      config,
+      diff,
+      diffSource: "test fixture",
+      runner: new StubRunner(false),
+      mutationRunner: forcedOff,
+      mutation: false
+    });
+    expect(forcedOff.calls).toHaveLength(0);
   });
 });
 
