@@ -259,7 +259,7 @@ docs/architecture/                documentação de incrementos
 ```text
 npm run lint       aprovado
 npm run typecheck  aprovado
-npm test           12 arquivos, 86 testes aprovados
+npm test           15 arquivos, 155 testes aprovados
 ```
 
 Os testes existentes cobrem:
@@ -364,21 +364,25 @@ Entregue e validado contra saída real do Stryker. Detalhes em `docs/architectur
 - Evidência executada vence a informada; run que falhou vira lacuna, não fallback para o valor de configuração.
 - Exibição no terminal, no comentário do PR e no relatório HTML.
 
-**Resultado real deste repositório:** 507 mutantes nos motores de domínio, 5m36s, **mutation score 57.4** (284 mortos, 172 sobreviventes, 44 sem cobertura). O arquivo que calcula o Quality Gate ficou em 45.2. Os 86 testes passam. A dívida está registrada e **não** foi contornada baixando o limiar de 75.
+**Resultado real deste repositório:** a primeira medição deu **57.4** (507 mutantes, 172 sobreviventes, 44 sem cobertura), com o arquivo do Quality Gate em 45.2 — e os 86 testes passando. A dívida foi paga escrevendo 69 testes novos, com asserção nos dois lados de cada limite, e a medição subiu para **87.2** (0 sem cobertura, 0 timeout). Nenhum limiar foi ajustado.
+
+| Arquivo | Antes | Depois |
+|---|---|---|
+| `packages/quality-engine/src/index.ts` | 45.2 | 83.9 |
+| `packages/quality-engine/src/selection.ts` | 66.7 | 86.7 |
+| `packages/quality-engine/src/evidence.ts` | 70.4 | 92.6 |
+| `packages/risk-engine/src/index.ts` | 71.7 | 90.8 |
+
+Para reproduzir: `npm run mutation` (cerca de 10 minutos).
 
 ### Próxima decisão — Dívida de mutation ou Dashboard
 
 Duas frentes concorrentes, a decidir com o usuário. A numeração 4–7 abaixo permanece
 como estava; esta seção é a escolha do que vem primeiro.
 
-**Opção A — Pagar a dívida de mutation (o gate já aponta onde).**
+**Opção A — Devolver peso a mutation no `evidence-gate.config.json`.**
 
-1. Fortalecer as asserções em `packages/quality-engine/src/index.ts` (score 45.2, 106 sobreviventes).
-2. Cobrir os 37 mutantes sem cobertura nesse arquivo.
-3. Subir o score dos quatro arquivos acima do mínimo de 75.
-4. Devolver os pesos de mutation e coverage ao padrão no `evidence-gate.config.json`.
-
-Critério de saída: o repositório passa no próprio gate com mutation ligado, sem ajustar limiar.
+Hoje o peso de mutation está em 8 (o padrão é 20), fixado quando o projeto ainda não media mutation. Agora mede: 87.2. Subir o peso é honesto, mas tem uma consequência a avaliar antes: com `runOn: ["HIGH","CRITICAL"]`, um PR de risco MEDIUM não roda mutation, então a evidência fica ausente e um peso maior derruba mais a confiança. Decidir entre subir o peso, ampliar o `runOn`, ou deixar como está.
 
 **Opção B — Dashboard React (maior valor visual, depende do modo servidor).**
 

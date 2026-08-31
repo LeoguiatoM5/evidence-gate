@@ -39,7 +39,7 @@ fechar a lacuna que o próprio repositório declarava em voz alta.
 Um run que falha **não** marca a análise como quebrada: os testes rodaram, o que faltou
 foi uma dimensão de evidência. Isso é diferente de uma suíte que não terminou.
 
-## O que a primeira execução real encontrou
+## O que a primeira execução real encontrou, e como foi paga
 
 Escopo: `packages/quality-engine` e `packages/risk-engine` — os motores puros, onde a
 decisão de release é calculada. 507 mutantes, 5 minutos e 36 segundos.
@@ -56,13 +56,34 @@ killed 284 · survived 172 · no coverage 44 · timeout 7
 | `packages/quality-engine/src/evidence.ts` | 70.4 |
 | `packages/risk-engine/src/index.ts` | 71.7 |
 
-Os 86 testes passam. Ainda assim, quase metade das mutações no arquivo que calcula o
-Quality Gate sobrevive — os testes exercitam os caminhos, mas não fixam o
+Os 86 testes passavam. Ainda assim, quase metade das mutações no arquivo que calcula o
+Quality Gate sobrevivia — os testes exercitavam os caminhos, mas não fixavam o
 comportamento com asserções fortes o bastante. É exatamente a tese do projeto,
 verificada contra o próprio código.
 
-O mínimo padrão é 75. Com mutation ligado, uma mudança nesses pacotes é bloqueada até
-a suíte melhorar. Essa dívida está registrada e não foi contornada baixando o limiar.
+### Pagando a dívida
+
+A resposta não foi baixar o limiar de 75, foi escrever os testes que faltavam. O padrão
+que funcionou: **asserção nos dois lados de cada limite**. Um `if (x < limite)` só fica
+fixado quando existe um caso exatamente no limite e outro um passo abaixo — é isso que
+mata mutantes de operador relacional.
+
+Foram 69 testes novos, isolando cada fator de risco (zerando os demais pesos, para que
+a asserção fixe uma fórmula só) e cada regra do gate.
+
+| Arquivo | Antes | Depois |
+|---|---|---|
+| `packages/quality-engine/src/index.ts` | 45.2 | **83.9** |
+| `packages/quality-engine/src/selection.ts` | 66.7 | **86.7** |
+| `packages/quality-engine/src/evidence.ts` | 70.4 | **92.6** |
+| `packages/risk-engine/src/index.ts` | 71.7 | **90.8** |
+| **Geral** | **57.4** | **87.2** |
+
+Mutantes sem cobertura caíram de 44 para 0; timeouts, de 7 para 0. O repositório passa
+no próprio limiar sem que nenhum limiar tenha sido tocado.
+
+Sobrevivem 65 mutantes. A maior parte é equivalente ou cosmética (arredondamento,
+ordem de mensagens); levar o número a zero teria custo alto e valor baixo.
 
 ## O sandbox e o layout local
 

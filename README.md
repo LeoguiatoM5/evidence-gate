@@ -286,10 +286,12 @@ Funciona hoje: CLI, relatório HTML, execução vitest/jest e Playwright, mutati
 via Stryker, GitHub Action com comentário no PR, política por projeto, API, worker e
 persistência.
 
-**Dívida conhecida, medida pela própria ferramenta:** os motores de domínio pontuam
-`57.4` em mutation testing (172 mutantes sobreviventes), abaixo do mínimo de 75 que o
-projeto adota. Está registrado em `docs/architecture/mvp-slice-5.md` e não foi
-contornado baixando o limiar.
+**A ferramenta encontrou dívida no próprio código, e ela foi paga.** A primeira medição
+de mutation nos motores de domínio deu **57.4** — os 86 testes passavam, mas quase
+metade das mutações no arquivo que calcula o Quality Gate sobrevivia. Foram escritos 69
+testes novos, com asserção nos dois lados de cada limite, e a medição subiu para
+**87.2**. Nenhum limiar foi ajustado. O caminho está em
+`docs/architecture/mvp-slice-5.md`.
 
 Ainda **não** existe: seleção por impacto real do diff, dashboard web, autenticação,
 nem análise determinística de falhas. O `TestSelection.reason` gravado em cada
@@ -301,7 +303,8 @@ Requer Node 22.12+.
 
 ```bash
 npm install
-npm run quality    # lint + typecheck + 62 testes
+npm run quality     # lint + typecheck + 155 testes
+npm run mutation    # mutation testing dos motores de domínio (~10 min)
 ```
 
 Os testes de execução rodam subprocessos reais e usam um SQLite temporário; não há mock
