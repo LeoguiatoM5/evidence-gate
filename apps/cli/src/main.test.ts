@@ -12,6 +12,7 @@ import { loadCheckConfig } from "./config.js";
 import { DiffSourceError, resolveDiff } from "./diff-source.js";
 import { parseArguments } from "./main.js";
 import { renderHtmlReport } from "./report-html.js";
+import { COMMENT_MARKER, renderMarkdownReport } from "./report-markdown.js";
 import { renderTerminalReport } from "./report-terminal.js";
 import { runCheck } from "./run-check.js";
 
@@ -256,6 +257,41 @@ describe("reports", () => {
 
     expect(html).not.toContain("<img src=x");
     expect(html).toContain("&lt;img src=x");
+  });
+
+  it("renders a Markdown summary that a pull request comment can be updated from", async () => {
+    const config = loadCheckConfig({ cwd: testRoot, configPath: configFile() });
+    const result = await runCheck({
+      config,
+      diff,
+      diffSource: "test fixture",
+      runner: new StubRunner(true)
+    });
+    const markdown = renderMarkdownReport(result, { commitSha: "abc1234def5678" });
+
+    // The marker must be the first thing in the body so the action can find the
+    // comment it already posted and update it instead of adding another one.
+    expect(markdown.startsWith(COMMENT_MARKER)).toBe(true);
+    expect(markdown).toContain("RELEASE_BLOCKED");
+    expect(markdown).toContain("Release blocked");
+    expect(markdown).toContain("keeps the payment limit");
+    expect(markdown).toContain("abc1234");
+  });
+
+  it("keeps a value containing a pipe inside its Markdown table cell", async () => {
+    const config = loadCheckConfig({
+      cwd: testRoot,
+      configPath: configFile({ project: "a | b | c" })
+    });
+    const result = await runCheck({
+      config,
+      diff,
+      diffSource: "test fixture",
+      runner: new StubRunner(false)
+    });
+    const markdown = renderMarkdownReport(result);
+
+    expect(markdown).toContain(String.raw`a \| b \| c`);
   });
 
   it("renders a terminal summary without control characters when colour is disabled", async () => {

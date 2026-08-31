@@ -1,0 +1,150 @@
+name: Evidence Gate
+description: >-
+  Runs the Evidence Gate against a pull request, posts the decision as a comment
+  and fails the job when the gate rejects the change.
+author: LeoguiatoM5
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  config:
+    description: Configuration file, relative to working-directory.
+    required: false
+    default: evidence-gate.config.json
+  working-directory:
+    description: Directory of the project to evaluate.
+    required: false
+    default: "."
+  base:
+    description: Comparison ref. Defaults to the baseRef in the configuration.
+    required: false
+    default: ""
+  fail-on:
+    description: 'blocked | review — which decision fails the job.'
+    required: false
+    default: review
+  comment:
+    description: Post the decision as a pull request comment.
+    required: false
+    default: "true"
+  github-token:
+    description: Token used to post the comment. Needs pull-requests write permission.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  decision:
+    description: RELEASE_APPROVED, REVIEW_REQUIRED or RELEASE_BLOCKED.
+    value: ${{ steps.check.outputs.decision }}
+  quality-score:
+    description: Quality Score, 0-100.
+    value: ${{ steps.check.outputs.quality-score }}
+  risk-score:
+    description: Risk Score, 0-100.
+    value: ${{ steps.check.outputs.risk-score }}
+  summary-file:
+    description: Path of the generated Markdown summary.
+    value: ${{ steps.check.outputs.summary-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Evidence Gate
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --no-audit --no-fund
+
+    - name: Run the gate
+      id: check
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_CWD: ${{ inputs.working-directory }}
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        set -euo pipefail
+        summary="$RUNNER_TEMP/evidence-gate-summary.md"
+        result="$RUNNER_TEMP/evidence-gate-result.json"
+        report="$RUNNER_TEMP/evidence-gate-report.html"
+
+        args=(check
+          --cwd "$INPUT_CWD"
+          --config "$INPUT_CONFIG"
+          --fail-on "$INPUT_FAIL_ON"
+          --report "$report"
+          --summary "$summary"
+          --output-json "$result")
+        if [ -n "$INPUT_BASE" ]; then args+=(--base "$INPUT_BASE"); fi
+
+        set +e
+        "$ACTION_PATH/node_modules/.bin/tsx" "$ACTION_PATH/apps/cli/src/cli.ts" "${args[@]}"
+        code=$?
+        set -e
+
+        if [ ! -f "$result" ]; then
+          echo "The gate did not produce a result file; see the output above." >&2
+          echo "exit-code=2" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        {
+          echo "exit-code=$code"
+          echo "decision=$(jq -r '.gate.decision' "$result")"
+          echo "quality-score=$(jq -r '.quality.score' "$result")"
+          echo "risk-score=$(jq -r '.risk.score' "$result")"
+          echo "summary-file=$summary"
+          echo "report-file=$report"
+        } >> "$GITHUB_OUTPUT"
+
+        cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Upload the HTML report
+      if: ${{ steps.check.outputs.report-file != '' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: evidence-gate-report
+        path: ${{ steps.check.outputs.report-file }}
+        if-no-files-found: ignore
+
+    - name: Comment on the pull request
+      if: ${{ inputs.comment == 'true' && github.event_name == 'pull_request' && steps.check.outputs.summary-file != '' }}
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const fs = require('node:fs');
+          const marker = '<!-- evidence-gate-report -->';
+          const body = fs.readFileSync('${{ steps.check.outputs.summary-file }}', 'utf8');
+          const { owner, repo } = context.repo;
+          const issue_number = context.payload.pull_request.number;
+
+          // One comment per pull request: update it instead of adding a new one on
+          // every run, so a long-lived branch does not collect duplicates.
+          const comments = await github.paginate(github.rest.issues.listComments, {
+            owner, repo, issue_number, per_page: 100
+          });
+          const existing = comments.find((comment) => comment.body?.includes(marker));
+
+          if (existing) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+          }
+
+    - name: Fail when the gate rejects the change
+      shell: bash
+      run: |
+        code="${{ steps.check.outputs.exit-code }}"
+        if [ "$code" = "0" ]; then
+          echo "Evidence Gate: ${{ steps.check.outputs.decision }}"
+          exit 0
+        fi
+        if [ "$code" = "2" ]; then
+          echo "::error::Evidence Gate could not evaluate this change (configuration, diff or execution error)."
+          exit 1
+        fi
+        echo "::error::Evidence Gate returned ${{ steps.check.outputs.decision }}."
+        exit 1

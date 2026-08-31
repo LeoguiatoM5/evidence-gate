@@ -1,0 +1,121 @@
+{
+  "project": "evidence-gate",
+  "baseRef": "origin/main",
+  "criticalityRules": [
+    {
+      "pathPrefix": "packages/quality-engine/",
+      "area": "Quality policy",
+      "businessCriticality": 90
+    },
+    {
+      "pathPrefix": "packages/risk-engine/",
+      "area": "Risk policy",
+      "businessCriticality": 88
+    },
+    {
+      "pathPrefix": "packages/test-runner/",
+      "area": "Process execution",
+      "businessCriticality": 88
+    },
+    {
+      "pathPrefix": "packages/core/",
+      "area": "Domain and redaction",
+      "businessCriticality": 85
+    },
+    {
+      "pathPrefix": "packages/git-analyzer/",
+      "area": "Diff parsing",
+      "businessCriticality": 75
+    },
+    {
+      "pathPrefix": "packages/persistence-prisma/",
+      "area": "Persistence",
+      "businessCriticality": 70
+    },
+    {
+      "pathPrefix": "apps/worker/",
+      "area": "Worker",
+      "businessCriticality": 70
+    },
+    {
+      "pathPrefix": "apps/api/",
+      "area": "API",
+      "businessCriticality": 65
+    },
+    {
+      "pathPrefix": "apps/cli/",
+      "area": "CLI",
+      "businessCriticality": 60
+    },
+    {
+      "pathPrefix": "packages/contracts/",
+      "area": "HTTP contracts",
+      "businessCriticality": 60
+    },
+    {
+      "pathPrefix": ".github/",
+      "area": "CI",
+      "businessCriticality": 40
+    },
+    {
+      "pathPrefix": "examples/",
+      "area": "Example project",
+      "businessCriticality": 20
+    },
+    {
+      "pathPrefix": "docs/",
+      "area": "Documentation",
+      "businessCriticality": 5
+    }
+  ],
+  "execution": {
+    "workingDirectory": ".",
+    "artifactsRoot": ".evidence-gate/artifacts",
+    "timeoutMs": 600000,
+    "maxOutputBytes": 1048576,
+    "suites": [
+      {
+        "key": "unit",
+        "kind": "REGRESSION",
+        "command": "node",
+        "args": [
+          "./node_modules/vitest/vitest.mjs",
+          "run",
+          "packages",
+          "apps/cli",
+          "apps/worker",
+          "--reporter=json",
+          "--outputFile={{reportPath}}"
+        ],
+        "reportFormat": "vitest-json",
+        "critical": false
+      },
+      {
+        "key": "api",
+        "kind": "API",
+        "command": "node",
+        "args": [
+          "./node_modules/vitest/vitest.mjs",
+          "run",
+          "apps/api",
+          "--reporter=json",
+          "--outputFile={{reportPath}}"
+        ],
+        "reportFormat": "vitest-json",
+        "critical": false
+      }
+    ]
+  },
+  "qualityPolicy": {
+    "version": "quality-v1-evidence-gate",
+    "weights": {
+      "regression": 40,
+      "api": 20,
+      "testStability": 12,
+      "evidenceCompleteness": 8,
+      "mutation": 8,
+      "riskControl": 7,
+      "coverage": 5
+    }
+  }
+}

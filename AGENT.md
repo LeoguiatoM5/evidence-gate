@@ -1,6 +1,6 @@
 # Evidence Gate — Handoff do agente
 
-Atualizado em 31/08/2026 (Incrementos 1–3 concluídos). Este arquivo registra o estado verificável do projeto, decisões já tomadas e a sequência segura para continuar sem recomeçar ou simular funcionalidades.
+Atualizado em 31/08/2026 (Incrementos 1–4 concluídos). Este arquivo registra o estado verificável do projeto, decisões já tomadas e a sequência segura para continuar sem recomeçar ou simular funcionalidades.
 
 ## Objetivo do produto
 
@@ -73,7 +73,16 @@ evidence-gate check
   → exit code 0/1/2
 ```
 
-Não há dashboard web, mutation testing executado (Stryker), IA nem integração com GitHub. Esses itens pertencem aos incrementos 4–6 e não devem ser apresentados como prontos.
+Incremento 4 — GitHub Action, política por projeto e dogfooding:
+
+```text
+pull_request → action.yml → evidence-gate check
+  → comentário idempotente no PR (marcador HTML)
+  → Job Summary + relatório HTML como artifact
+  → job falha conforme fail-on
+```
+
+Não há dashboard web, mutation testing executado (Stryker) nem IA. Esses itens pertencem aos incrementos 5 e 6 e não devem ser apresentados como prontos.
 
 ### Monorepo atual
 
@@ -222,6 +231,12 @@ docs/architecture/                documentação de incrementos
 | Escopo do incremento 1 | `docs/architecture/mvp-slice-1.md` |
 | Escopo do incremento 2 | `docs/architecture/mvp-slice-2.md` |
 | Escopo do incremento 3 | `docs/architecture/mvp-slice-3.md` |
+| Escopo do incremento 4 | `docs/architecture/mvp-slice-4.md` |
+| GitHub Action | `action.yml` |
+| Workflows | `.github/workflows/` |
+| Política por projeto | `apps/cli/src/policy-overrides.ts` |
+| Resumo Markdown do PR | `apps/cli/src/report-markdown.ts` |
+| Config de self-check | `evidence-gate.config.json` |
 
 ## Validações já executadas
 
@@ -230,7 +245,7 @@ docs/architecture/                documentação de incrementos
 ```text
 npm run lint       aprovado
 npm run typecheck  aprovado
-npm test           10 arquivos, 62 testes aprovados
+npm test           11 arquivos, 71 testes aprovados
 ```
 
 Os testes existentes cobrem:
@@ -312,20 +327,32 @@ Entregue e validado. Detalhes em `docs/architecture/mvp-slice-3.md`.
 - Correção de projeto: risco MEDIUM sem suíte `SMOKE` declarada executava zero testes. Agora, se nenhuma suíte corresponde aos tipos preferidos, todas as permitidas rodam, e o motivo é registrado.
 - Interface (CLI e relatório) unificada em inglês, alinhada às mensagens do domínio; documentação segue em português.
 
-### Próxima decisão — GitHub Action ou Dashboard
+### Incremento 4 — GitHub Action e política por projeto (concluído)
+
+Entregue. Detalhes em `docs/architecture/mvp-slice-4.md`.
+
+- `action.yml` composto: instala a ferramenta do próprio `action_path`, roda o gate, escreve o Job Summary, anexa o relatório como artifact, comenta no PR e falha conforme `fail-on`.
+- Comentário idempotente pelo marcador `<!-- evidence-gate-report -->`: atualiza o existente em vez de duplicar.
+- CLI ganhou `--summary <file>` (Markdown) e `--output-json <file>`.
+- `qualityPolicy` / `riskPolicy` configuráveis por projeto, mesclados sobre o padrão; chave desconhecida é erro. Peso zero **não** silencia lacuna: o componente segue em `missingEvidence`, segue derrubando confiança e segue impedindo aprovação automática.
+- Workflows `.github/workflows/ci.yml` (lint, typecheck, testes, demo) e `evidence-gate.yml` (o repositório se avalia com a própria ferramenta).
+- `evidence-gate.config.json` na raiz, com duas suítes reais: `unit` e `api`.
+
+**Não validado ainda:** a Action nunca rodou em um PR real. A primeira execução é a verificação que falta.
+
+### Próxima decisão — Dashboard ou Stryker
 
 Duas frentes concorrentes, a decidir com o usuário. A numeração 4–7 abaixo permanece
 como estava; esta seção é a escolha do que vem primeiro.
 
-**Opção A — GitHub Action (maior impacto de adoção).**
+**Opção A — Adapter StrykerJS (fecha a lacuna que o próprio repositório declara).**
 
-1. Action que roda `evidence-gate check` no PR e publica a decisão como comentário.
-2. Idempotência por SHA: reexecutar não duplica comentário.
-3. Anexar o relatório HTML como artifact do workflow.
-4. Nunca colocar token do GitHub em log, artefato ou relatório.
+1. Executar Stryker de forma incremental e ler o relatório JSON.
+2. Persistir killed, survived, timeout e no coverage.
+3. Alimentar `mutationScore` e `survivedCriticalMutants` a partir de execução real, não de configuração.
+4. Devolver os pesos de mutation ao padrão no `evidence-gate.config.json`.
 
-Critério de saída: abrir um PR produz um comentário com decisão, motivos e números, sem
-ninguém rodar comando manualmente.
+Critério de saída: o repositório deixa de informar mutation por configuração e passa a medi-lo.
 
 **Opção B — Dashboard React (maior valor visual, depende do modo servidor).**
 

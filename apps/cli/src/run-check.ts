@@ -9,14 +9,11 @@ import type {
 } from "@evidence-gate/core";
 import { analyzeGitDiff } from "@evidence-gate/git-analyzer";
 import type { QualityEvidence } from "@evidence-gate/quality-engine";
-import {
-  DEFAULT_QUALITY_POLICY,
-  calculateQualityScore,
-  evaluateQualityGate
-} from "@evidence-gate/quality-engine";
-import { DEFAULT_RISK_POLICY, assessRisk } from "@evidence-gate/risk-engine";
+import { calculateQualityScore, evaluateQualityGate } from "@evidence-gate/quality-engine";
+import { assessRisk } from "@evidence-gate/risk-engine";
 import { SubprocessTestRunner } from "@evidence-gate/test-runner";
 import type { CheckConfig } from "./config.js";
+import { describePolicyVersion } from "./policy-overrides.js";
 import { buildEvidence, selectSuites } from "./selection.js";
 
 export interface CheckResult {
@@ -61,14 +58,17 @@ export const runCheck = async (options: RunCheckOptions): Promise<CheckResult> =
   notify("ANALYZING", "reading the diff");
   const repositoryAnalysis = analyzeGitDiff(options.diff, config.criticalityRules);
 
-  const risk = assessRisk({
-    changedFiles: repositoryAnalysis.changes.length,
-    changedLines: repositoryAnalysis.totalChangedLines,
-    inferredBusinessCriticality: Math.max(
-      ...repositoryAnalysis.changes.map((change) => change.businessCriticality)
-    ),
-    metrics: config.riskMetrics
-  });
+  const risk = assessRisk(
+    {
+      changedFiles: repositoryAnalysis.changes.length,
+      changedLines: repositoryAnalysis.totalChangedLines,
+      inferredBusinessCriticality: Math.max(
+        ...repositoryAnalysis.changes.map((change) => change.businessCriticality)
+      ),
+      metrics: config.riskMetrics
+    },
+    config.policies.risk
+  );
   notify("ANALYZING", `risk ${String(risk.score)} (${risk.level})`);
 
   const runner = options.runner ?? new SubprocessTestRunner({ policy: config.policy });
@@ -88,14 +88,14 @@ export const runCheck = async (options: RunCheckOptions): Promise<CheckResult> =
 
   const executionBroken = executions.some((execution) => execution.status !== "COMPLETED");
   const evidence = buildEvidence(executions, config.suppliedEvidence);
-  const quality = calculateQualityScore(risk, evidence);
-  const gate = evaluateQualityGate(risk, quality, evidence);
+  const quality = calculateQualityScore(risk, evidence, config.policies.quality);
+  const gate = evaluateQualityGate(risk, quality, evidence, config.policies.quality);
   notify("CALCULATING", `score ${String(quality.score)} → ${gate.decision}`);
 
   return {
     projectName: config.projectName,
     diffSource: options.diffSource,
-    policyVersion: `${DEFAULT_RISK_POLICY.version}+${DEFAULT_QUALITY_POLICY.version}`,
+    policyVersion: describePolicyVersion(config.policies),
     generatedAt: new Date().toISOString(),
     repositoryAnalysis,
     risk,

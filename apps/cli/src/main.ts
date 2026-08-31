@@ -3,6 +3,7 @@ import { relative, resolve } from "node:path";
 import { loadCheckConfig } from "./config.js";
 import { DiffSourceError, resolveDiff } from "./diff-source.js";
 import { renderHtmlReport } from "./report-html.js";
+import { renderMarkdownReport } from "./report-markdown.js";
 import { renderTerminalReport } from "./report-terminal.js";
 import { runCheck } from "./run-check.js";
 
@@ -20,6 +21,8 @@ Options:
   --report <file>      HTML report destination (default: evidence-gate-report.html)
   --no-report          do not write the HTML report
   --json               print the full result as JSON
+  --summary <file>     write a Markdown summary (pull request comment, CI summary)
+  --output-json <file> write the full result as JSON to a file
   --fail-on <level>    blocked | review (default: review)
   --help               show this help
 
@@ -36,6 +39,8 @@ interface ParsedArguments {
   diffFile?: string;
   base?: string;
   report?: string;
+  summary?: string;
+  outputJson?: string;
   writeReport: boolean;
   json: boolean;
   failOn: "blocked" | "review";
@@ -81,6 +86,12 @@ export const parseArguments = (argv: readonly string[]): ParsedArguments => {
         break;
       case "--report":
         parsed.report = readValue(flag);
+        break;
+      case "--summary":
+        parsed.summary = readValue(flag);
+        break;
+      case "--output-json":
+        parsed.outputJson = readValue(flag);
         break;
       case "--no-report":
         parsed.writeReport = false;
@@ -166,6 +177,22 @@ export const main = async (argv: readonly string[]): Promise<number> => {
       if (!options.json) {
         console.log(`  Report: ${relative(options.cwd, config.reportPath) || config.reportPath}\n`);
       }
+    }
+
+    if (options.summary) {
+      writeFileSync(
+        resolve(options.cwd, options.summary),
+        renderMarkdownReport(result, { commitSha: process.env.GITHUB_SHA }),
+        "utf8"
+      );
+    }
+
+    if (options.outputJson) {
+      writeFileSync(
+        resolve(options.cwd, options.outputJson),
+        JSON.stringify(result, null, 2),
+        "utf8"
+      );
     }
 
     if (result.executionBroken) return EXIT_OPERATIONAL;

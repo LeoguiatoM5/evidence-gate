@@ -7,6 +7,8 @@ import type { QualityEvidence } from "@evidence-gate/quality-engine";
 import type { RiskMetrics } from "@evidence-gate/risk-engine";
 import type { AllowedSuite, ExecutionPolicy, ReportFormat } from "@evidence-gate/test-runner";
 import { ExecutionPolicyError, REPORT_FORMATS, assertExecutionPolicy } from "@evidence-gate/test-runner";
+import type { ResolvedPolicies } from "./policy-overrides.js";
+import { resolvePolicies } from "./policy-overrides.js";
 
 /**
  * The project being evaluated owns this file. It is operator configuration checked
@@ -27,6 +29,7 @@ export interface CheckConfig {
     | "survivedCriticalMutants"
   >;
   policy: ExecutionPolicy;
+  policies: ResolvedPolicies;
   reportPath: string;
 }
 
@@ -183,6 +186,7 @@ export const loadCheckConfig = (options: LoadConfigOptions): CheckConfig => {
     criticalityRules: readCriticalityRules(raw),
     riskMetrics: readNumberRecord<Record<string, number>>(raw, "riskMetrics") as RiskMetrics,
     suppliedEvidence: readNumberRecord<Record<string, number>>(raw, "suppliedEvidence"),
+    policies: resolvePolicies(raw),
     policy: assertExecutionPolicy({
       workingDirectory,
       artifactsRoot,

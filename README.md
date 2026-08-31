@@ -97,6 +97,67 @@ Formatos de relatório suportados: **vitest/jest** (`vitest-json`) e **Playwrigh
 
 Exit codes: `0` decisão aceitável · `1` gate reprovou · `2` erro operacional.
 
+## No Pull Request
+
+A Action publica a decisão como comentário, atualiza o mesmo comentário a cada push
+(em vez de acumular duplicatas), anexa o relatório HTML como artifact e falha o job
+quando o gate reprova.
+
+```yaml
+name: Evidence Gate
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # o gate compara com a branch base
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.12"
+      - run: npm ci
+      - uses: LeoguiatoM5/evidence-gate@main
+        with:
+          fail-on: blocked
+```
+
+Entradas: `config`, `working-directory`, `base`, `fail-on`, `comment`, `github-token`.
+Saídas: `decision`, `quality-score`, `risk-score`, `summary-file`.
+
+Este repositório usa a própria ferramenta nos seus PRs — veja
+`.github/workflows/evidence-gate.yml` e o `evidence-gate.config.json` da raiz.
+
+## Política do projeto
+
+Peso e limiar são política, não verdade universal. Um time sem mutation testing declara
+isso, em vez de ser pontuado por evidência que nunca produz:
+
+```json
+{
+  "qualityPolicy": {
+    "version": "quality-v1-acme",
+    "weights": { "regression": 40, "api": 20, "mutation": 8, "coverage": 5 },
+    "approvedMinimum": 85,
+    "mutationMinimum": 75
+  },
+  "riskPolicy": { "levels": { "critical": 70 } }
+}
+```
+
+Os mapas são mesclados sobre o padrão, e chave desconhecida é rejeitada em vez de
+ignorada. **O que a configuração não faz é silenciar uma lacuna:** um componente
+continua listado como evidência ausente, continua derrubando a confiança e continua
+impedindo aprovação automática — muda apenas quanto ele pesa no score.
+
+É por isso que este repositório fica em `REVIEW_REQUIRED` no próprio gate: os 64 testes
+passam, mas ele ainda não mede mutation nem coverage, e diz isso.
+
 ## Como a decisão é formada
 
 ```text
