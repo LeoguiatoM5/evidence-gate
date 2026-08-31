@@ -285,6 +285,44 @@ describe("gate warnings", () => {
     expect(gate.decision).toBe("REVIEW_REQUIRED");
   });
 
+  it("warns above the recorded budget, not at it", () => {
+    const budget: QualityPolicy = {
+      ...DEFAULT_QUALITY_POLICY,
+      maximumSurvivedCriticalMutants: 65
+    };
+    // A project that already carries survivors records the count as a ratchet, so
+    // only a new survivor raises the warning.
+    expect(
+      gateFor(fullEvidence({ survivedCriticalMutants: 65 }), risk(40), budget).reasons.map(
+        (reason) => reason.code
+      )
+    ).not.toContain("CRITICAL_SURVIVED_MUTANT");
+
+    const exceeded = gateFor(
+      fullEvidence({ survivedCriticalMutants: 66 }),
+      risk(40),
+      budget
+    ).reasons.find((reason) => reason.code === "CRITICAL_SURVIVED_MUTANT");
+    expect(exceeded?.actual).toBe(66);
+    expect(exceeded?.expected).toBe("<= 65");
+    expect(exceeded?.message).toContain("exceed the recorded budget");
+  });
+
+  it("rejects a budget that is negative or fractional", () => {
+    expect(() =>
+      calculateQualityScore(risk(10), fullEvidence(), {
+        ...DEFAULT_QUALITY_POLICY,
+        maximumSurvivedCriticalMutants: -1
+      })
+    ).toThrow(/non-negative integer/);
+    expect(() =>
+      calculateQualityScore(risk(10), fullEvidence(), {
+        ...DEFAULT_QUALITY_POLICY,
+        maximumSurvivedCriticalMutants: 1.5
+      })
+    ).toThrow(/non-negative integer/);
+  });
+
   it("does not warn about survivors when there are none", () => {
     expect(codesOf(fullEvidence({ survivedCriticalMutants: 0 }))).not.toContain(
       "CRITICAL_SURVIVED_MUTANT"

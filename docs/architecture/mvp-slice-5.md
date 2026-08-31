@@ -85,6 +85,21 @@ no próprio limiar sem que nenhum limiar tenha sido tocado.
 Sobrevivem 65 mutantes. A maior parte é equivalente ou cosmética (arredondamento,
 ordem de mensagens); levar o número a zero teria custo alto e valor baixo.
 
+### Por que o gate ganhou um orçamento de sobreviventes
+
+A primeira execução em CI expôs um defeito de sinal. Os 65 sobreviventes ficam todos em
+área crítica, porque os dois pacotes mutados estão acima do `criticalityThreshold`.
+Como a regra exigia zero, o aviso passaria a disparar em **todo PR, para sempre** — e um
+alerta que nunca apaga é um alerta que ninguém lê.
+
+`qualityPolicy.maximumSurvivedCriticalMutants` resolve: o padrão continua `0`, e um
+projeto que já carrega sobreviventes registra o número atual como catraca. Este
+repositório registra 65, medido em 31/08/2026. Só um sobrevivente novo levanta o aviso,
+e o número deve descer, nunca subir.
+
+É diferente de afrouxar um limiar: o valor não muda score nem decisão, ele calibra
+quando um aviso é informação em vez de ruído.
+
 ## O sandbox e o layout local
 
 A primeira execução falhou copiando um log transitório do npm, e demorava demais. O

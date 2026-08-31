@@ -150,6 +150,12 @@ export const resolvePolicies = (raw: Record<string, unknown>): ResolvedPolicies 
       "minimumConfidence",
       DEFAULT_QUALITY_POLICY.minimumConfidence,
       "qualityPolicy"
+    ),
+    maximumSurvivedCriticalMutants: readOptionalNumber(
+      qualitySource,
+      "maximumSurvivedCriticalMutants",
+      DEFAULT_QUALITY_POLICY.maximumSurvivedCriticalMutants,
+      "qualityPolicy"
     )
   };
 

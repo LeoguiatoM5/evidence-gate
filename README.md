@@ -183,7 +183,14 @@ Declare o comando no mesmo arquivo de configuração:
 - **`reportPath`** — onde a ferramenta grava o relatório. O Stryker decide isso pela
   configuração dele, então o projeto declara aqui em vez de a ferramenta adivinhar.
 - **`criticalityThreshold`** — um mutante sobrevivente em arquivo com criticidade igual
-  ou acima disso vira `survivedCriticalMutants`, que o gate trata como bloqueador.
+  ou acima disso conta como `survivedCriticalMutants`.
+- **`qualityPolicy.maximumSurvivedCriticalMutants`** — quantos sobreviventes uma área
+  crítica pode carregar antes de o gate avisar. O padrão é `0`. Um projeto que já
+  carrega sobreviventes registra o número atual como **catraca**: só um sobrevivente
+  *novo* levanta o aviso, e o número deve descer com o tempo, nunca subir.
+
+Exigir zero sobreviventes é um alvo que nenhum projeto real atinge — mutantes
+equivalentes existem, e um alerta que nunca apaga é um alerta que ninguém lê.
 
 Qualquer ferramenta que emita o [mutation-testing report schema](https://github.com/stryker-mutator/mutation-testing-elements)
 serve; o adapter não é acoplado ao Stryker.
