@@ -66,6 +66,26 @@
       "pathPrefix": "docs/",
       "area": "Documentation",
       "businessCriticality": 5
+    },
+    {
+      "pathPrefix": "README.md",
+      "area": "Documentation",
+      "businessCriticality": 5
+    },
+    {
+      "pathPrefix": "AGENT.md",
+      "area": "Documentation",
+      "businessCriticality": 5
+    },
+    {
+      "pathPrefix": "action.yml",
+      "area": "CI",
+      "businessCriticality": 40
+    },
+    {
+      "pathPrefix": "evidence-gate.config.json",
+      "area": "CI",
+      "businessCriticality": 40
     }
   ],
   "execution": {

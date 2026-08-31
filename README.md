@@ -1,5 +1,7 @@
 # Evidence Gate
 
+[![CI](https://github.com/LeoguiatoM5/evidence-gate/actions/workflows/ci.yml/badge.svg)](https://github.com/LeoguiatoM5/evidence-gate/actions/workflows/ci.yml)
+
 **Seu CI diz que passou. Isto diz se dá para confiar.**
 
 Um quality gate que recebe uma mudança de código, executa os testes que o risco daquela
