@@ -430,6 +430,7 @@ necessária sem consultar logs.
 | SQLite concorrente | Adequado para um worker MVP. Não iniciar múltiplos workers até migração para PostgreSQL ou mecanismo de lease devidamente testado. |
 | Parser de diff | Suporta formato unificado comum; ampliar fixtures antes de alegar suporte total a paths complexos, binaries ou submodules. |
 | Políticas em código | Adequadas para o primeiro corte; devem migrar para `ProjectPolicy` versionada antes de multi-projeto. |
+| Risco dominado por fallback | Sem histórico de bugs, coverage e testes relacionados, seis dos oito fatores usam fallback pessimista e dominam o score: uma mudança só de documentação pontuou risco 45 (MEDIUM). A correção é alimentar métricas reais (coverage do vitest, bugs pelo histórico do git, testes relacionados pelo mapa de impacto), não abaixar os fallbacks. |
 | API síncrona | Preservada apenas como modo determinístico/fixture em `/api/v1/analyses/deterministic`. Não deve executar Playwright/Stryker na thread HTTP. |
 | Artefatos sem retenção | `artifacts/` cresce sem limpeza. Definir política de retenção antes de uso prolongado. |
 | Allow list de execução | `config/execution-policy.json` é confiança de operador e não é versionado. Um comando errado ali executa de verdade; revisar como se revisa um script de CI. |
