@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, relative, resolve } from "node:path";
 import { discoverTestFiles, parseGitLog, readGitLog } from "@evidence-gate/git-history";
 import { DEFAULT_CONFIG_FILE, loadCheckConfig } from "./config.js";
@@ -159,12 +159,21 @@ const runInit = (options: ParsedArguments): number => {
   }
 
   const log = readGitLog(options.cwd);
+  const gitignorePath = resolve(options.cwd, ".gitignore");
   const result = buildInitialConfig({
     manifest: readManifest(options.cwd),
     commits: log === null ? [] : parseGitLog(log),
     testFiles: discoverTestFiles(options.cwd),
-    directoryName: basename(resolve(options.cwd))
+    directoryName: basename(resolve(options.cwd)),
+    gitignore: existsSync(gitignorePath) ? readFileSync(gitignorePath, "utf8") : null
   });
+
+  if (result.gitignoreAdditions.length > 0) {
+    const existing = existsSync(gitignorePath) ? readFileSync(gitignorePath, "utf8") : "";
+    const separator = existing === "" || existing.endsWith("\n") ? "" : "\n";
+    const entries = result.gitignoreAdditions.join("\n");
+    appendFileSync(gitignorePath, `${separator}\n# Evidence Gate\n${entries}\n`, "utf8");
+  }
 
   writeFileSync(target, `${JSON.stringify(result.config, null, 2)}\n`, "utf8");
 

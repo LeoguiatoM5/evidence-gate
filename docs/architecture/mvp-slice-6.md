@@ -108,6 +108,11 @@ Verificado num projeto limpo com quatro commits, dois deles corrigindo
 Resultado: `src/payment/` com criticidade 90, `src/cart/` sem regra — porque nunca
 precisou de correção.
 
+Também acrescenta `.evidence-gate/` e `evidence-gate-report.html` ao `.gitignore` do
+projeto. Isso não é conveniência: sem essa linha, os artefatos de execução entram no
+commit seguinte e passam a poluir o próprio diff que a ferramenta analisa — foi
+exatamente o que aconteceu ao testar o fluxo num projeto consumidor.
+
 Três decisões de comportamento:
 
 - **Não sobrescreve.** Um `evidence-gate.config.json` existente exige `--force`.

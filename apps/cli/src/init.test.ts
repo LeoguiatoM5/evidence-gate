@@ -152,6 +152,29 @@ describe("generated configuration", () => {
     expect(result.warnings.join(" ")).toContain("No test file was found");
   });
 
+  it("proposes the artefacts a project should ignore", () => {
+    const result = build({ gitignore: "node_modules/\ndist/\n" });
+    expect(result.gitignoreAdditions).toEqual([".evidence-gate/", "evidence-gate-report.html"]);
+    expect(result.notes.join(" ")).toContain("Added to .gitignore");
+  });
+
+  it("proposes nothing when the entries are already ignored", () => {
+    const result = build({
+      gitignore: "node_modules/\n.evidence-gate/\nevidence-gate-report.html\n"
+    });
+    expect(result.gitignoreAdditions).toEqual([]);
+  });
+
+  it("accepts the directory entry with or without a trailing slash", () => {
+    const result = build({ gitignore: ".evidence-gate\n" });
+    expect(result.gitignoreAdditions).toEqual(["evidence-gate-report.html"]);
+  });
+
+  it("proposes every entry when the project has no gitignore", () => {
+    const result = build({ gitignore: null });
+    expect(result.gitignoreAdditions).toHaveLength(2);
+  });
+
   it("warns when the history has commits but declares no fix", () => {
     const result = build({ commits: [commit("feat: a", ["src/a/b.ts"], false)] });
     expect(result.warnings.join(" ")).toContain("no commit declaring a fix");

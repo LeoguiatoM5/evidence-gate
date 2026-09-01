@@ -56,10 +56,89 @@ npm run demo:healthy    # RELEASE_APPROVED, exit 0
 O `npm run demo` termina com **exit code 1** de propósito: é assim que ele trava um
 pipeline.
 
-## Use no seu projeto
+## Usar no seu repositório
+
+**Requisitos do seu projeto:** Node 22.12+, ser um repositório git (o risco vem do
+histórico), e ter uma suíte de testes com vitest, jest ou Playwright — sem testes não
+há evidência para avaliar.
+
+> O pacote ainda **não está publicado no npm**, então não existe `npx evidence-gate`.
+> Os dois caminhos abaixo funcionam hoje, sem publicação.
+
+### Caminho 1 — GitHub Action (recomendado)
+
+Não exige instalar nada: o GitHub baixa esta Action e ela resolve as próprias
+dependências. Crie `.github/workflows/evidence-gate.yml` no **seu** repositório:
+
+```yaml
+name: Evidence Gate
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: write      # necessário para comentar no PR
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # o gate compara com a branch base
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.12"   # requer Node 22.12+
+
+      - run: npm ci               # instala as dependências do SEU projeto
+
+      - uses: LeoguiatoM5/evidence-gate@main
+        with:
+          fail-on: blocked
+```
+
+Falta só o `evidence-gate.config.json` na raiz do seu repositório — veja a seção
+seguinte.
+
+Entradas: `config`, `working-directory`, `base`, `fail-on`, `comment`, `github-token`.
+Saídas: `decision`, `quality-score`, `risk-score`, `summary-file`.
+
+### Caminho 2 — CLI local
+
+Enquanto não há publicação no npm, clone uma vez e aponte para o seu projeto:
 
 ```bash
-evidence-gate init
+git clone https://github.com/LeoguiatoM5/evidence-gate.git ~/ferramentas/evidence-gate
+cd ~/ferramentas/evidence-gate && npm ci
+
+# a partir daqui, de qualquer lugar:
+EG=~/ferramentas/evidence-gate
+node "$EG/node_modules/tsx/dist/cli.mjs" "$EG/apps/cli/src/cli.ts" check --cwd /caminho/do/seu/projeto
+```
+
+Vale criar um alias:
+
+```bash
+EG=~/ferramentas/evidence-gate
+alias evidence-gate="node $EG/node_modules/tsx/dist/cli.mjs $EG/apps/cli/src/cli.ts"
+```
+
+No PowerShell:
+
+```powershell
+$EG = "$HOME/ferramentas/evidence-gate"
+function evidence-gate { node "$EG/node_modules/tsx/dist/cli.mjs" "$EG/apps/cli/src/cli.ts" @args }
+```
+
+O caminho é `node_modules/tsx/dist/cli.mjs`, e **não** `node_modules/.bin/tsx` — este
+último é um wrapper de shell, que o `node` não consegue executar.
+
+Com o alias, tudo que este README chama de `evidence-gate ...` funciona.
+
+## Gerar a configuração
+
+```bash
+evidence-gate init      # no diretório do seu projeto
 ```
 
 Ele lê o `package.json` para descobrir o runner (vitest, jest, Playwright), procura os
@@ -92,6 +171,13 @@ Num projeto com dois commits de correção em `src/payment/`, ele escreve:
 
 A criticidade proposta descreve o histórico, não o valor de negócio — revise. E note o
 que **não** está no arquivo: métricas de risco, porque elas são contadas a cada execução.
+
+O `init` também acrescenta ao seu `.gitignore` o que a ferramenta escreve
+(`.evidence-gate/` e `evidence-gate-report.html`), para que artefatos de execução não
+entrem em commit. Se já estiverem lá, ele não duplica.
+
+Se preferir não instalar nada para gerar o arquivo, copie o exemplo acima e ajuste os
+caminhos: é a mesma coisa que o `init` escreveria.
 
 ### Ou escreva à mão
 
@@ -134,38 +220,28 @@ Formatos de relatório suportados: **vitest/jest** (`vitest-json`) e **Playwrigh
 
 Exit codes: `0` decisão aceitável · `1` gate reprovou · `2` erro operacional.
 
-## No Pull Request
+### Rodando
 
-A Action publica a decisão como comentário, atualiza o mesmo comentário a cada push
-(em vez de acumular duplicatas), anexa o relatório HTML como artifact e falha o job
-quando o gate reprova.
-
-```yaml
-name: Evidence Gate
-on: pull_request
-
-permissions:
-  contents: read
-  pull-requests: write
-
-jobs:
-  gate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0          # o gate compara com a branch base
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22.12"
-      - run: npm ci
-      - uses: LeoguiatoM5/evidence-gate@main
-        with:
-          fail-on: blocked
+```bash
+evidence-gate check                          # compara com origin/main
+evidence-gate check --fail-on blocked        # falha só em bloqueio
+evidence-gate check --diff-file changes.patch --json
 ```
 
-Entradas: `config`, `working-directory`, `base`, `fail-on`, `comment`, `github-token`.
-Saídas: `decision`, `quality-score`, `risk-score`, `summary-file`.
+Exit codes: `0` decisão aceitável · `1` gate reprovou · `2` erro operacional.
+
+Formatos de relatório: **vitest/jest** (`vitest-json`) e **Playwright**
+(`playwright-json`).
+
+## O comentário no Pull Request
+
+A Action publica a decisão como comentário e **atualiza o mesmo comentário** a cada
+push, em vez de acumular duplicatas — o corpo começa com um marcador HTML que ela usa
+para se reencontrar. Também escreve o resumo no Job Summary, anexa o relatório HTML
+como artifact e falha o job conforme `fail-on`.
+
+O comentário traz a decisão, os três números, os motivos, a tabela de execução das
+suítes, os testes que não passaram e, quando mutation roda, o placar de mutantes.
 
 Este repositório usa a própria ferramenta nos seus PRs — veja
 `.github/workflows/evidence-gate.yml` e o `evidence-gate.config.json` da raiz.
@@ -339,8 +415,9 @@ testes novos, com asserção nos dois lados de cada limite, e a medição subiu 
 **87.2**. Nenhum limiar foi ajustado. O caminho está em
 `docs/architecture/mvp-slice-5.md`.
 
-Ainda **não** existe: seleção por impacto real do diff, dashboard web, autenticação,
-nem análise determinística de falhas. O `TestSelection.reason` gravado em cada
+Ainda **não** existe: publicação no npm (por isso a adoção passa pela Action ou por um
+clone), seleção por impacto real do diff, dashboard web, autenticação, nem análise
+determinística de falhas. O `TestSelection.reason` gravado em cada
 análise diz explicitamente o que foi e o que não foi resolvido.
 
 ## Desenvolvimento

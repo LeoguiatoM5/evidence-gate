@@ -21,6 +21,8 @@ export interface InitResult {
   config: Record<string, unknown>;
   notes: string[];
   warnings: string[];
+  /** Entries the project should ignore, absent from its current .gitignore. */
+  gitignoreAdditions: string[];
 }
 
 export interface PackageManifest {
@@ -29,6 +31,9 @@ export interface PackageManifest {
   dependencies?: unknown;
   devDependencies?: unknown;
 }
+
+/** What the tool writes into the project and must not end up in a commit. */
+export const IGNORED_ARTEFACTS = [".evidence-gate/", "evidence-gate-report.html"];
 
 export interface BuildInitOptions {
   /** Parsed package.json, or null when the project has none. */
@@ -39,6 +44,8 @@ export interface BuildInitOptions {
   testFiles: readonly string[];
   /** Fallback project name when the manifest has none. */
   directoryName: string;
+  /** Current .gitignore contents, or null when the project has none. */
+  gitignore?: string | null;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -197,6 +204,21 @@ export const buildInitialConfig = (options: BuildInitOptions): InitResult => {
     );
   }
 
+  const ignored = new Set(
+    (options.gitignore ?? "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line !== "")
+  );
+  const gitignoreAdditions = IGNORED_ARTEFACTS.filter(
+    (entry) => !ignored.has(entry) && !ignored.has(entry.replace(/\/$/, ""))
+  );
+  if (gitignoreAdditions.length > 0) {
+    notes.push(
+      `Added to .gitignore: ${gitignoreAdditions.join(", ")} — the tool writes these, and a commit should not carry them.`
+    );
+  }
+
   const config: Record<string, unknown> = {
     project,
     baseRef: "origin/main",
@@ -212,5 +234,5 @@ export const buildInitialConfig = (options: BuildInitOptions): InitResult => {
     "Risk metrics are not written to the file: change frequency, bug history and related tests are counted from the git history on every run."
   );
 
-  return { config, notes, warnings };
+  return { config, notes, warnings, gitignoreAdditions };
 };
