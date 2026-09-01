@@ -260,7 +260,7 @@ docs/architecture/                documentação de incrementos
 ```text
 npm run lint       aprovado
 npm run typecheck  aprovado
-npm test           16 arquivos, 182 testes aprovados
+npm test           17 arquivos, 200 testes aprovados
 ```
 
 Os testes existentes cobrem:
@@ -376,7 +376,7 @@ Entregue e validado contra saída real do Stryker. Detalhes em `docs/architectur
 
 Para reproduzir: `npm run mutation` (cerca de 10 minutos).
 
-### Incremento 6 — Métricas do histórico (concluído)
+### Incremento 6 — Histórico e `init` (concluído)
 
 Entregue. Detalhes em `docs/architecture/mvp-slice-6.md`.
 
@@ -386,17 +386,17 @@ Entregue. Detalhes em `docs/architecture/mvp-slice-6.md`.
 - Contado vence declarado; o que não dá para contar fica ausente, não zerado.
 - Flag `--no-history` para quando o histórico disponível não é o do código avaliado (é o caso do `examples/checkout-service`).
 - Efeito medido: risco deste repositório passou de 45–52 (dominado por fallback) para 66 (HIGH), a partir de 8 commits reais.
+- `evidence-gate init` detecta runner (vitest, jest, Playwright), acha os testes e propõe criticidade a partir de onde as correções caem. Não sobrescreve sem `--force`, não grava métricas de risco, e avisa em vez de inventar quando falta evidência.
 
 ### Próxima decisão — `init` e publicação no npm, ou Dashboard
 
 O gargalo de adoção hoje não é funcionalidade, é a barreira de entrada. Duas frentes:
 
-**Opção A — Tornar adotável por quem não é especialista em QA.**
+**Opção A — Terminar o caminho de adoção (o `init` já foi entregue).**
 
-1. `evidence-gate init`: lê o `package.json`, descobre o runner (vitest, jest, playwright), monta as suítes e propõe regras de criticidade a partir das pastas que mais mudam.
-2. Rodar sem configuração alguma, descobrindo o que der, em vez de falhar com "arquivo não encontrado".
-3. Publicar no npm para `npx evidence-gate check` funcionar sem clonar nada.
-4. Saída acionável: cada lacuna acompanhada do comando que a fecha.
+1. Publicar no npm para `npx evidence-gate check` funcionar sem clonar nada. É o que falta para as demais melhorias alcançarem alguém.
+2. Rodar sem configuração alguma, caindo no que o `init` descobriria, em vez de falhar com "arquivo não encontrado".
+3. Saída acionável: cada lacuna acompanhada do comando que a fecha.
 
 Critério de saída: alguém adota em um projeto novo sem ler documentação.
 

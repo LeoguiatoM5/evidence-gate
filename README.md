@@ -58,7 +58,44 @@ pipeline.
 
 ## Use no seu projeto
 
-Crie um `evidence-gate.config.json` na raiz do repositório a ser avaliado:
+```bash
+evidence-gate init
+```
+
+Ele lê o `package.json` para descobrir o runner (vitest, jest, Playwright), procura os
+arquivos de teste no disco, e propõe regras de criticidade a partir de **onde as
+correções caem** no histórico — a área que mais recebe `fix:` fica no topo da faixa.
+Depois explica cada decisão que tomou e o que você deve revisar.
+
+Num projeto com dois commits de correção em `src/payment/`, ele escreve:
+
+```json
+{
+  "project": "checkout",
+  "criticalityRules": [
+    { "pathPrefix": "src/payment/", "area": "Payment", "businessCriticality": 90 }
+  ],
+  "execution": {
+    "workingDirectory": ".",
+    "suites": [
+      {
+        "key": "unit",
+        "kind": "REGRESSION",
+        "command": "node",
+        "args": ["./node_modules/vitest/vitest.mjs", "run", "--reporter=json", "--outputFile={{reportPath}}"],
+        "reportFormat": "vitest-json"
+      }
+    ]
+  }
+}
+```
+
+A criticidade proposta descreve o histórico, não o valor de negócio — revise. E note o
+que **não** está no arquivo: métricas de risco, porque elas são contadas a cada execução.
+
+### Ou escreva à mão
+
+O `evidence-gate.config.json` completo aceita:
 
 ```json
 {

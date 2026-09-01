@@ -1,4 +1,4 @@
-# Incremento 6 — Métricas de risco derivadas do histórico
+# Incremento 6 — Histórico como fonte de verdade, e `init`
 
 Objetivo: parar de pedir que alguém **digite** quantos bugs uma área teve.
 
@@ -81,3 +81,43 @@ avaliado, `--no-history` é a resposta honesta.
 - A detecção de correção depende de mensagens de commit descritivas. Num repositório com
   histórico de "wip" e "ajustes", `bugCount` será subestimado — e o relatório não tem
   como saber disso.
+
+
+## `evidence-gate init`
+
+O mesmo histórico que alimenta o risco também remove a barreira de entrada. `init` lê o
+`package.json` para descobrir o runner, procura arquivos de teste no disco, e propõe
+regras de criticidade a partir de onde as correções caem.
+
+A fórmula é deliberadamente simples e explicável: agrupa caminhos por área (dois
+segmentos de diretório), conta commits de correção por área, e distribui numa faixa de
+40 a 90 proporcional à área que mais recebe correção. Áreas sem correção nenhuma não
+viram regra — a ferramenta não inventa criticidade onde não há evidência.
+
+Verificado num projeto limpo com quatro commits, dois deles corrigindo
+`src/payment/limit.ts`:
+
+```text
+· Project name taken from package.json: checkout
+· Test runner detected: unit (vitest-json)
+· 1 test file(s) found.
+· Criticality proposed from 4 commits, ranked by where fixes land.
+  Review these numbers: they describe history, not business value.
+```
+
+Resultado: `src/payment/` com criticidade 90, `src/cart/` sem regra — porque nunca
+precisou de correção.
+
+Três decisões de comportamento:
+
+- **Não sobrescreve.** Um `evidence-gate.config.json` existente exige `--force`.
+- **Não escreve métricas de risco.** Elas são contadas a cada execução; congelá-las no
+  arquivo recriaria o problema que o incremento resolveu.
+- **Avisa em vez de inventar.** Sem runner detectado, sem histórico, ou sem arquivo de
+  teste, o resultado traz um aviso explícito em vez de um valor plausível.
+
+### Limite
+
+A criticidade proposta reflete onde o time historicamente errou, que se correlaciona
+com risco mas não é a mesma coisa. Uma área crítica que nunca quebrou não recebe regra
+nenhuma. Por isso a saída insiste que o número é ponto de partida para revisão.

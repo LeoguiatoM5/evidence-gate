@@ -1,17 +1,20 @@
-import { writeFileSync } from "node:fs";
-import { relative, resolve } from "node:path";
-import { loadCheckConfig } from "./config.js";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, relative, resolve } from "node:path";
+import { discoverTestFiles, parseGitLog, readGitLog } from "@evidence-gate/git-history";
+import { DEFAULT_CONFIG_FILE, loadCheckConfig } from "./config.js";
 import { DiffSourceError, resolveDiff } from "./diff-source.js";
 import { renderHtmlReport } from "./report-html.js";
 import { renderMarkdownReport } from "./report-markdown.js";
 import { renderTerminalReport } from "./report-terminal.js";
+import { buildInitialConfig, type PackageManifest } from "./init.js";
 import { runCheck } from "./run-check.js";
 
 const USAGE = `
-evidence-gate check — decides whether a change is safe to release.
+evidence-gate — decides whether a change is safe to release.
 
 Usage:
-  evidence-gate check [options]
+  evidence-gate check [options]     evaluate the current change
+  evidence-gate init [--force]      write a first configuration for this project
 
 Options:
   --cwd <dir>          project directory to evaluate (default: current directory)
@@ -47,6 +50,7 @@ interface ParsedArguments {
   writeReport: boolean;
   mutation?: boolean;
   history?: boolean;
+  force: boolean;
   json: boolean;
   failOn: "blocked" | "review";
   help: boolean;
@@ -57,6 +61,7 @@ export const parseArguments = (argv: readonly string[]): ParsedArguments => {
     command: "check",
     cwd: process.cwd(),
     writeReport: true,
+    force: false,
     json: false,
     failOn: "review",
     help: false
@@ -110,6 +115,9 @@ export const parseArguments = (argv: readonly string[]): ParsedArguments => {
       case "--no-history":
         parsed.history = false;
         break;
+      case "--force":
+        parsed.force = true;
+        break;
       case "--json":
         parsed.json = true;
         break;
@@ -133,6 +141,40 @@ export const parseArguments = (argv: readonly string[]): ParsedArguments => {
   return parsed;
 };
 
+const readManifest = (cwd: string): PackageManifest | null => {
+  try {
+    return JSON.parse(readFileSync(resolve(cwd, "package.json"), "utf8")) as PackageManifest;
+  } catch {
+    return null;
+  }
+};
+
+const runInit = (options: ParsedArguments): number => {
+  const target = resolve(options.cwd, options.config ?? DEFAULT_CONFIG_FILE);
+  if (existsSync(target) && !options.force) {
+    console.error(
+      `\n  ${relative(options.cwd, target)} already exists. Pass --force to replace it.\n`
+    );
+    return EXIT_OPERATIONAL;
+  }
+
+  const log = readGitLog(options.cwd);
+  const result = buildInitialConfig({
+    manifest: readManifest(options.cwd),
+    commits: log === null ? [] : parseGitLog(log),
+    testFiles: discoverTestFiles(options.cwd),
+    directoryName: basename(resolve(options.cwd))
+  });
+
+  writeFileSync(target, `${JSON.stringify(result.config, null, 2)}\n`, "utf8");
+
+  console.log(`\n  Wrote ${relative(options.cwd, target) || target}\n`);
+  for (const note of result.notes) console.log(`   · ${note}`);
+  for (const warning of result.warnings) console.log(`   ! ${warning}`);
+  console.log("\n  Review it, then run: evidence-gate check\n");
+  return EXIT_OK;
+};
+
 const EXIT_OK = 0;
 const EXIT_GATE_FAILED = 1;
 const EXIT_OPERATIONAL = 2;
@@ -150,6 +192,9 @@ export const main = async (argv: readonly string[]): Promise<number> => {
   if (options.help) {
     console.log(USAGE);
     return EXIT_OK;
+  }
+  if (options.command === "init") {
+    return runInit(options);
   }
   if (options.command !== "check") {
     console.error(`Unknown command: ${options.command}`);

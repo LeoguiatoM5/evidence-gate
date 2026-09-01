@@ -41,6 +41,10 @@ export interface DeriveOptions {
 const DEFAULT_WINDOW_DAYS = 90;
 const MAXIMUM_BUFFER = 64 * 1024 * 1024;
 
+/** Raw `git log` output for the window, or null when there is no readable history. */
+export const readGitLog = (cwd: string, windowDays = DEFAULT_WINDOW_DAYS): string | null =>
+  runGitLog(cwd, windowDays);
+
 const runGitLog = (cwd: string, windowDays: number): string | null => {
   const result = spawnSync(
     "git",
