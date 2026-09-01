@@ -220,6 +220,42 @@ Formatos de relatório suportados: **vitest/jest** (`vitest-json`) e **Playwrigh
 
 Exit codes: `0` decisão aceitável · `1` gate reprovou · `2` erro operacional.
 
+### Testes de integração
+
+Um teste de integração é um comando como qualquer outro — declare a suíte e pronto:
+
+```json
+{
+  "key": "integration",
+  "kind": "API",
+  "command": "node",
+  "args": [
+    "./node_modules/vitest/vitest.mjs",
+    "run",
+    "tests/integration",
+    "--reporter=json",
+    "--outputFile={{reportPath}}"
+  ],
+  "reportFormat": "vitest-json"
+}
+```
+
+O `kind` decide onde a evidência entra no Quality Score:
+
+| `kind` | Alimenta | Use para |
+|---|---|---|
+| `SMOKE` | regressão | verificação rápida, roda em todo nível de risco |
+| `REGRESSION` | regressão | suíte unitária e de integração da aplicação |
+| `API` | componente de API, separado | contrato HTTP, integração entre serviços |
+
+Este repositório faz exatamente isso: a suíte `api` sobe um SQLite temporário e um
+servidor Fastify de verdade a cada teste, e é declarada como `kind: "API"`.
+
+**O que a ferramenta não faz: provisionar o ambiente.** Ela executa o comando, nada
+mais. Se seus testes precisam de Postgres, Redis ou um serviço externo, suba antes —
+com `services:` no workflow do GitHub, ou `docker compose up -d` num passo anterior.
+Ela não orquestra containers, e não pretende orquestrar.
+
 ### Rodando
 
 ```bash
@@ -357,6 +393,29 @@ Esse último item nasceu de um bug real: `authorization: Bearer <token>` mascara
 palavra "Bearer" e deixava o token exposto. Foi encontrado por um teste da própria
 suíte, corrigido, e hoje tem teste de regressão
 (`packages/core/src/redaction.test.ts`).
+
+### Ela não recebe código de terceiros para executar
+
+Vale deixar explícito, porque é uma pergunta comum: **isto não é um serviço onde alguém
+envia o código dele e recebe a avaliação.** Não é uma limitação a resolver depois, é a
+regra central do projeto — executar código arbitrário de origem não confiável é a
+definição de RCE.
+
+A separação é sempre a mesma:
+
+| O que pode vir de fora | O que só vem de configuração |
+|---|---|
+| o diff, os metadados, as métricas informadas | o comando, os argumentos, o diretório de trabalho |
+
+Mesmo no modo servidor, onde um `POST` recebe um diff pela rede, quem decide o que
+executa é quem opera o servidor. O diff é dado; o comando é configuração.
+
+Se você precisa mesmo avaliar código de terceiros, é outro projeto: exigiria container
+descartável por execução, sem rede e sem credencial, com limite de CPU, memória e
+tempo, e sistema de arquivos efêmero. Nada disso existe aqui.
+
+O caminho pronto para uso por outras pessoas é a **GitHub Action**: cada uma roda no
+runner dela, com o código dela, sob a conta dela. Ninguém executa código de ninguém.
 
 ## Modo servidor (opcional)
 
