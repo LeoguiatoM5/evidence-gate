@@ -1,6 +1,6 @@
 # Evidence Gate — Handoff do agente
 
-Atualizado em 31/08/2026 (Incrementos 1–5 concluídos). Este arquivo registra o estado verificável do projeto, decisões já tomadas e a sequência segura para continuar sem recomeçar ou simular funcionalidades.
+Atualizado em 31/08/2026 (Incrementos 1–6 concluídos). Este arquivo registra o estado verificável do projeto, decisões já tomadas e a sequência segura para continuar sem recomeçar ou simular funcionalidades.
 
 ## Objetivo do produto
 
@@ -102,6 +102,7 @@ apps/worker/                      worker, fila e máquina de estados
 packages/core/                    tipos, portas de execução e redação de segredos
 packages/contracts/               contratos TypeBox da API
 packages/git-analyzer/            parser determinístico de Git Diff
+packages/git-history/             métricas de risco contadas do git log
 packages/risk-engine/             cálculo de risco
 packages/quality-engine/          Quality Score, Gate, seleção por risco e evidência
 packages/test-runner/             execução allow-listed e parsers de relatório
@@ -259,7 +260,7 @@ docs/architecture/                documentação de incrementos
 ```text
 npm run lint       aprovado
 npm run typecheck  aprovado
-npm test           15 arquivos, 155 testes aprovados
+npm test           17 arquivos, 200 testes aprovados
 ```
 
 Os testes existentes cobrem:
@@ -375,27 +376,41 @@ Entregue e validado contra saída real do Stryker. Detalhes em `docs/architectur
 
 Para reproduzir: `npm run mutation` (cerca de 10 minutos).
 
-### Próxima decisão — Dívida de mutation ou Dashboard
+### Incremento 6 — Histórico e `init` (concluído)
 
-Duas frentes concorrentes, a decidir com o usuário. A numeração 4–7 abaixo permanece
-como estava; esta seção é a escolha do que vem primeiro.
+Entregue. Detalhes em `docs/architecture/mvp-slice-6.md`.
 
-**Opção A — Devolver peso a mutation no `evidence-gate.config.json`.**
+- `packages/git-history` conta `changesLast90Days`, `bugCount` e `relatedTests` do `git log` e do disco.
+- Detecção de correção por Conventional Commits e palavra-chave (inglês e português), com limite de palavra: `fixture` e `prefix` não contam, e `refactor:` é levado a sério.
+- Agregação: arquivo mais quente decide o risco; arquivo menos coberto decide a lacuna de teste.
+- Contado vence declarado; o que não dá para contar fica ausente, não zerado.
+- Flag `--no-history` para quando o histórico disponível não é o do código avaliado (é o caso do `examples/checkout-service`).
+- Efeito medido: risco deste repositório passou de 45–52 (dominado por fallback) para 66 (HIGH), a partir de 8 commits reais.
+- `evidence-gate init` detecta runner (vitest, jest, Playwright), acha os testes e propõe criticidade a partir de onde as correções caem. Não sobrescreve sem `--force`, não grava métricas de risco, e avisa em vez de inventar quando falta evidência.
 
-Hoje o peso de mutation está em 8 (o padrão é 20), fixado quando o projeto ainda não media mutation. Agora mede: 87.2. Subir o peso é honesto, mas tem uma consequência a avaliar antes: com `runOn: ["HIGH","CRITICAL"]`, um PR de risco MEDIUM não roda mutation, então a evidência fica ausente e um peso maior derruba mais a confiança. Decidir entre subir o peso, ampliar o `runOn`, ou deixar como está.
+### Próxima decisão — `init` e publicação no npm, ou Dashboard
 
-**Opção B — Dashboard React (maior valor visual, depende do modo servidor).**
+O gargalo de adoção hoje não é funcionalidade, é a barreira de entrada. Duas frentes:
+
+**Opção A — Terminar o caminho de adoção (o `init` já foi entregue).**
+
+1. Publicar no npm para `npx evidence-gate check` funcionar sem clonar nada. É o que falta para as demais melhorias alcançarem alguém.
+2. Rodar sem configuração alguma, caindo no que o `init` descobriria, em vez de falhar com "arquivo não encontrado".
+3. Saída acionável: cada lacuna acompanhada do comando que a fecha.
+
+Critério de saída: alguém adota em um projeto novo sem ler documentação.
+
+**Opção B — Dashboard React (depende do modo servidor).**
 
 1. Criar `apps/web` com React, TypeScript e Vite.
 2. Dashboard inicial: decisão destacada, Quality Score, Risk Score, confiança, testes, coverage, mutation, áreas afetadas e motivos do gate.
 3. Tela de análise com timeline de etapas, mudanças e contribuições do risco.
 4. Polling inicial do status; SSE somente se houver necessidade real.
-5. Criar E2E Playwright do dashboard após a primeira tela estar funcionando.
 
 Critério de saída: usuário entende o que mudou, por que a decisão ocorreu e qual ação é
 necessária sem consultar logs.
 
-### Incremento 6 — Test Impact Analysis
+### Incremento 7 — Test Impact Analysis
 
 1. Criar mapa determinístico path/módulo → funcionalidades → tags/suítes Playwright.
 2. Implementar Test Selection Engine por risco:
@@ -409,7 +424,7 @@ necessária sem consultar logs.
 4. Persistir histórico por identidade estável do teste.
 5. Adicionar GitHub Actions: install, lint, typecheck, unit, API, E2E, build e Quality Gate.
 
-### Incremento 7 — Flakiness e Failure Analysis
+### Incremento 8 — Flakiness e Failure Analysis
 
 Mutation (itens 1 e 2 da lista original) foi entregue no Incremento 5. Resta:
 
@@ -423,7 +438,7 @@ Mutation (itens 1 e 2 da lista original) foi entregue no Incremento 5. Resta:
 3. Conectar sinais ao Quality Engine sem duplicar penalidades indevidamente.
 4. Persistir mutantes sobreviventes no modo servidor e abrir issue para os críticos.
 
-### Incremento 8 — IA e GitHub App
+### Incremento 9 — IA e GitHub App
 
 1. Criar `AIProvider` e contratos: `analyzeDiff`, `generateTestScenarios`, `analyzeFailure`, `calculateRisk`, `explainQualityGate`.
 2. Enviar ao modelo apenas fatos estruturados e referências de evidência.
@@ -432,7 +447,7 @@ Mutation (itens 1 e 2 da lista original) foi entregue no Incremento 5. Resta:
 5. Criar GitHub App e webhook para o modo servidor. A GitHub Action com comentário idempotente já foi entregue no Incremento 4.
 6. Nunca colocar token do GitHub, OpenAI ou outro provedor no banco, log, artefato ou resposta HTTP.
 
-### Incremento 9 — Produto operacional
+### Incremento 10 — Produto operacional
 
 1. Trends de Quality Score, mutation, coverage, flaky rate, duração e detecção de bugs.
 2. Migração ensaiada SQLite → PostgreSQL.
